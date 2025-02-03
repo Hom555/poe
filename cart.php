@@ -1,5 +1,12 @@
 <?php
 session_start();
+include 'condb.php';
+
+// ตรวจสอบการล็อกอิน
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
 
 // ตรวจสอบว่ามีสินค้าในตะกร้าหรือไม่
 if (!isset($_SESSION["strProductID"]) || count($_SESSION["strProductID"]) == 0) {
@@ -10,31 +17,25 @@ if (!isset($_SESSION["strProductID"]) || count($_SESSION["strProductID"]) == 0) 
     exit();
 }
 
-include 'condb.php';
-
 // ตรวจสอบการลบสินค้า
-if (isset($_GET['remove']) && isset($_SESSION["strProductID"][$_GET['remove']])) {
-    $key = intval($_GET['remove']); // แปลง key ให้เป็น integer เพื่อความปลอดภัย
+if (isset($_GET['remove'])) {
+    $key = intval($_GET['remove']);
     unset($_SESSION["strProductID"][$key]);
     unset($_SESSION["strQty"][$key]);
 
-    // จัดเรียง index ใหม่หลังลบ
+    // จัดเรียง index ใหม่
     $_SESSION["strProductID"] = array_values($_SESSION["strProductID"]);
     $_SESSION["strQty"] = array_values($_SESSION["strQty"]);
     
-    echo "<script>
-        alert('ลบสินค้าสำเร็จ');
-        window.location.href = 'cart.php';
-    </script>";
+    header("Location: cart.php");
     exit();
 }
 
 // ตรวจสอบการเพิ่ม/ลดจำนวนสินค้า
-if (isset($_GET['changeQty']) && isset($_GET['key']) && isset($_SESSION["strQty"][$_GET['key']])) {
-    $key = intval($_GET['key']); // แปลง key ให้เป็น integer เพื่อความปลอดภัย
+if (isset($_GET['changeQty']) && isset($_GET['key'])) {
+    $key = intval($_GET['key']);
     $change = $_GET['changeQty'];
 
-    // ตรวจสอบการเพิ่มหรือลด
     if ($change == 'add') {
         $_SESSION["strQty"][$key]++;
     } elseif ($change == 'sub' && $_SESSION["strQty"][$key] > 1) {
@@ -46,111 +47,198 @@ if (isset($_GET['changeQty']) && isset($_GET['key']) && isset($_SESSION["strQty"
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cart</title>
+    <title>ตะกร้าสินค้า</title>
     <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .quantity-control .btn {
+            padding: 2px 8px;
+        }
+        .product-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+    </style>
 </head>
 <body>
-<div class="container mt-5">
-<form id="form1" method="POST" action="insert_cart.php">
-    <h2>ตะกร้าสินค้า</h2>
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>รหัสสินค้า</th>
-                <th>ชื่อสินค้า</th>
-                <th>จำนวน</th>
-                <th>ราคา</th>
-                <th>รวม</th>
-                <th>เพิ่ม - ลด</th>
-                <th>การจัดการ</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php
-            // ตรวจสอบข้อมูลที่เก็บในตะกร้า
-            if (isset($_SESSION["strProductID"])) {
-                $total = 0;
-                foreach ($_SESSION["strProductID"] as $key => $productId) {
-                    $productId = mysqli_real_escape_string($conn, $productId);
-
-                    // ดึงข้อมูลสินค้าจากฐานข้อมูล
-                    $sql = "SELECT * FROM product WHERE po_id = '$productId'";
-                    $result = mysqli_query($conn, $sql);
-                    if ($result && $row = mysqli_fetch_assoc($result)) {
-                        $qty = $_SESSION["strQty"][$key];
-                        $subtotal = $row['price'] * $qty;
-                        $total += $subtotal;
-
-                        echo "<tr>";
-                        echo "<td>{$row['po_id']}</td>";
-                        echo "<td>{$row['po_name']}</td>";
-                        echo "<td>{$qty}</td>";
-                        echo "<td>" . number_format($row['price'], 2) . "</td>";
-                        echo "<td>" . number_format($subtotal, 2) . "</td>";
-                        echo "<td>
-                            <a href='cart.php?changeQty=add&key={$key}' class='btn btn-success btn-sm'>+</a>
-                            <a href='cart.php?changeQty=sub&key={$key}' class='btn btn-warning btn-sm'>-</a>
-                        </td>";
-                        echo "<td><a href='cart.php?remove={$key}' class='btn btn-danger btn-sm'>ลบ</a></td>";
-                        echo "</tr>";
-                    } else {
-                        echo "<tr><td colspan='7'>ไม่พบข้อมูลสินค้านี้</td></tr>";
-                    }
-                }
-            } else {
-                echo "<tr><td colspan='7'>ไม่มีสินค้าที่ถูกเพิ่มลงในตะกร้า</td></tr>";
-            }
-            ?>
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="5" class="text-end"><b>ยอดรวมทั้งหมด</b></td>
-                <td><?= isset($total) ? number_format($total, 2) : '0.00'; ?></td>
-                <td></td>
-            </tr>
-        </tfoot>
-    </table>
-    <a href="sh_product.php" class="btn btn-primary">กลับไปเลือกสินค้า</a>
-    
-</div>
-
-<div class="row">
-    <div class="col-md-8 mx-auto">
-        <div class="alert alert-success text-center" role="alert">
-            <h4>ข้อมูลสำหรับจัดส่งสินค้า</h4>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="#">ร้านค้า</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="sh_product.php">กลับไปเลือกสินค้า</a>
+                    </li>
+                </ul>
+            </div>
         </div>
-        <form>
-            <!-- ชื่อ-นามสกุล -->
-            <div class="mb-3">
-                <label for="cusName" class="form-label">ชื่อ-นามสกุล:</label>
-                <input type="text" id="cusName" name="cus_name" class="form-control" required placeholder="ชื่อ-นามสกุล ...">
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <!-- ตะกร้าสินค้า -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shopping-cart me-2"></i>ตะกร้าสินค้า
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>สินค้า</th>
+                                        <th class="text-center">ราคา</th>
+                                        <th class="text-center">จำนวน</th>
+                                        <th class="text-end">รวม</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                    $total = 0;
+                                    foreach ($_SESSION["strProductID"] as $key => $productId) {
+                                        $sql = "SELECT * FROM product WHERE po_id = ?";
+                                        $stmt = $conn->prepare($sql);
+                                        $stmt->bind_param("s", $productId);
+                                        $stmt->execute();
+                                        $result = $stmt->get_result();
+                                        $row = $result->fetch_assoc();
+
+                                        $qty = $_SESSION["strQty"][$key];
+                                        $subtotal = $row['price'] * $qty;
+                                        $total += $subtotal;
+                                    ?>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <img src="img/<?= $row['image'] ?>" class="product-image me-3">
+                                                    <div>
+                                                        <h6 class="mb-0"><?= $row['po_name'] ?></h6>
+                                                        <small class="text-muted">รหัส: <?= $row['po_id'] ?></small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-center"><?= number_format($row['price'], 2) ?></td>
+                                            <td class="text-center">
+                                                <div class="quantity-control justify-content-center">
+                                                    <a href="?changeQty=sub&key=<?= $key ?>" class="btn btn-sm btn-outline-secondary">
+                                                        <i class="fas fa-minus"></i>
+                                                    </a>
+                                                    <span class="mx-2"><?= $qty ?></span>
+                                                    <a href="?changeQty=add&key=<?= $key ?>" class="btn btn-sm btn-outline-secondary">
+                                                        <i class="fas fa-plus"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                            <td class="text-end"><?= number_format($subtotal, 2) ?></td>
+                                            <td class="text-center">
+                                                <a href="?remove=<?= $key ?>" class="btn btn-sm btn-danger" 
+                                                   onclick="return confirm('ต้องการลบสินค้านี้?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <?php } ?>
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>รวมทั้งหมด</strong></td>
+                                        <td class="text-end"><strong><?= number_format($total, 2) ?></strong></td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <!-- ที่อยู่ -->
-            <div class="mb-3">
-                <label for="cusAdd" class="form-label">ที่อยู่จัดส่งสินค้า:</label>
-                <textarea id="cusAdd" name="cus_add" class="form-control" required placeholder="ที่อยู่ ..." rows="3"></textarea>
+
+            <!-- ฟอร์มข้อมูลจัดส่ง -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shipping-fast me-2"></i>ข้อมูลจัดส่ง
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <?php
+                        // ดึงข้อมูลผู้ใช้
+                        $user_id = $_SESSION['user_id'];
+                        $sql = "SELECT * FROM users WHERE user_id = ?";
+                        $stmt = $conn->prepare($sql);
+                        $stmt->bind_param("i", $user_id);
+                        $stmt->execute();
+                        $user = $stmt->get_result()->fetch_assoc();
+                        ?>
+                        <form action="insert_cart.php" method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">ชื่อ-นามสกุล</label>
+                                <input type="text" name="cus_name" class="form-control" 
+                                       value="<?= htmlspecialchars($user['name'] ?? $user['username']) ?>" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">ที่อยู่</label>
+                                <input type="text" name="cus_add" class="form-control" 
+                                       value="<?= htmlspecialchars($user['address'] ?? '') ?>" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">จังหวัด</label>
+                                    <input type="text" name="province" class="form-control" 
+                                           value="<?= htmlspecialchars($user['province'] ?? '') ?>" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">อำเภอ/เขต</label>
+                                    <input type="text" name="district" class="form-control" 
+                                           value="<?= htmlspecialchars($user['district'] ?? '') ?>" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">ตำบล/แขวง</label>
+                                    <input type="text" name="subdistrict" class="form-control" 
+                                           value="<?= htmlspecialchars($user['subdistrict'] ?? '') ?>" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">รหัสไปรษณีย์</label>
+                                    <input type="text" name="zipcode" class="form-control" 
+                                           value="<?= htmlspecialchars($user['zipcode'] ?? '') ?>" 
+                                           pattern="[0-9]{5}" maxlength="5" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">เบอร์โทรศัพท์</label>
+                                <input type="tel" name="cus_tel" class="form-control" 
+                                       value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-check-circle me-2"></i>ยืนยันการสั่งซื้อ
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
-            <!-- เบอร์โทรศัพท์ -->
-            <div class="mb-3">
-                <label for="cusTel" class="form-label">เบอร์โทรศัพท์:</label>
-                <input type="number" id="cusTel" name="cus_tel" class="form-control" required placeholder="เบอร์โทรศัพท์ ...">
-            </div>
-            <!-- ปุ่มยืนยัน -->
-            <div class="text-center mt-4">
-                <button type="submit" class="btn btn-success px-4">ยืนยันการสั่งซื้อ</button>
-            </div>
-        </form>
+        </div>
     </div>
-</div>
-</form>
+
+    <script src="bootstrap/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 
-<?php
-// ปิดการเชื่อมต่อฐานข้อมูล
-mysqli_close($conn);
-?>

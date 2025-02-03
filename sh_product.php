@@ -9,11 +9,32 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // ดึงข้อมูลสินค้า
-$sql = "SELECT product.*, type.type_name 
-        FROM product 
-        LEFT JOIN type ON product.type_id = type.type_id 
-        ORDER BY product.po_id DESC";
+$sql = "SELECT p.*, t.type_name 
+        FROM product p 
+        LEFT JOIN type t ON p.type_id = t.type_id 
+        ORDER BY p.po_id DESC";
 $result = mysqli_query($conn, $sql);
+
+// เพิ่มสินค้าลงตะกร้า
+if (isset($_GET['id'])) {
+    $po_id = $_GET['id'];
+    
+    // ตรวจสอบว่ามีตะกร้าสินค้าหรือยัง
+    if (!isset($_SESSION["strProductID"])) {
+        $_SESSION["strProductID"] = array();
+        $_SESSION["strQty"] = array();
+    }
+    
+    // เพิ่มสินค้าลงตะกร้า
+    array_push($_SESSION["strProductID"], $po_id);
+    array_push($_SESSION["strQty"], 1);
+    
+    echo "<script>
+        alert('เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว');
+        window.location.href = 'cart.php';
+    </script>";
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -77,7 +98,7 @@ $result = mysqli_query($conn, $sql);
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="my_orders.php">
+                            <a class="dropdown-item" href="order_history.php">
                                 <i class="fas fa-shopping-bag"></i> การซื้อของฉัน
                             </a>
                         </li>
@@ -123,9 +144,9 @@ $result = mysqli_query($conn, $sql);
                         </div>
                         <div class="card-footer bg-transparent border-top-0">
                             <?php if($row['amount'] > 0) { ?>
-                                <a href="order.php?id=<?= $row['po_id'] ?>" 
+                                <a href="?id=<?= $row['po_id'] ?>" 
                                    class="btn btn-primary w-100">
-                                    <i class="fas fa-shopping-cart"></i> สั่งซื้อ
+                                    <i class="fas fa-cart-plus"></i> หยิบใส่ตะกร้า
                                 </a>
                             <?php } else { ?>
                                 <button class="btn btn-secondary w-100" disabled>
@@ -142,5 +163,5 @@ $result = mysqli_query($conn, $sql);
     <script src="bootstrap/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
 <?php mysqli_close($conn); ?>
+
