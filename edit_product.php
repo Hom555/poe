@@ -58,8 +58,12 @@ $type_result = mysqli_query($conn, $type_sql);
             </div>
 
             <div class="mb-3">
-                <button type="submit" class="btn btn-primary">บันทึก</button>
-                <a href="sh_product_ad.php" class="btn btn-secondary">ยกเลิก</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> บันทึก
+                </button>
+                <a href="sh_product_ad.php" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> ยกเลิก
+                </a>
             </div>
         </form>
     </div>
