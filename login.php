@@ -2,6 +2,16 @@
 session_start();
 include 'condb.php';
 
+// ถ้ามีการล็อกอินอยู่แล้ว ให้ redirect ไปหน้าที่เหมาะสม
+if (isset($_SESSION['user_role'])) {
+    if ($_SESSION['user_role'] == 1) {  // 1 = admin
+        header("Location: admin_orders.php");
+    } else {  // 2 = user
+        header("Location: sh_product.php");
+    }
+    exit();
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = $_POST['email'];
     $password = $_POST['password'];

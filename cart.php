@@ -187,7 +187,7 @@ if (isset($_GET['changeQty']) && isset($_GET['key'])) {
                         $stmt->execute();
                         $user = $stmt->get_result()->fetch_assoc();
                         ?>
-                        <form action="insert_cart.php" method="POST">
+                        <form action="insert_cart.php" method="POST" enctype="multipart/form-data">
                             <div class="mb-3">
                                 <label class="form-label">ชื่อ-นามสกุล</label>
                                 <input type="text" name="cus_name" class="form-control" 
@@ -238,7 +238,7 @@ if (isset($_GET['changeQty']) && isset($_GET['key'])) {
                                 </div>
                                 <div class="card-body">
                                     <div class="text-center mb-3">
-                                        <img src="img/promptpay-qr.png" alt="QR Code" class="img-fluid mb-2" style="max-width: 200px;">
+                                        <img src="img/Screenshot 2025-02-03 133753.png" alt="QR Code" class="img-fluid mb-2" style="max-width: 200px;">
                                         <div class="d-flex justify-content-center align-items-center gap-2">
                                             <span class="fw-bold">พร้อมเพย์:</span>
                                             <span>xxx-xxx-xxxx</span>
@@ -259,13 +259,23 @@ if (isset($_GET['changeQty']) && isset($_GET['key'])) {
 
                                     <div class="mb-3">
                                         <label class="form-label">แนบสลิปการโอนเงิน</label>
-                                        <input type="file" name="payment_slip" class="form-control" accept="image/*" required>
+                                        <input type="file" name="payment_slip" class="form-control" accept="image/*" required 
+                                               onchange="previewSlip(this)">
                                         <div class="form-text">รองรับไฟล์ภาพ jpg, jpeg, png ขนาดไม่เกิน 2MB</div>
+                                        <div id="slip-preview" class="mt-2 text-center" style="display: none;">
+                                            <img src="" alt="ตัวอย่างสลิป" class="img-fluid" style="max-height: 200px;">
+                                        </div>
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label">วันที่โอน</label>
-                                        <input type="datetime-local" name="payment_date" class="form-control" required>
+                                        <?php
+                                        date_default_timezone_set('Asia/Bangkok');
+                                        $thai_year = date('Y') + 543;  // แปลงเป็น พ.ศ.
+                                        $thai_date = date('d/m/') . $thai_year . date(' H:i');
+                                        ?>
+                                        <input type="text" class="form-control" value="<?= $thai_date ?>" readonly>
+                                        <input type="hidden" name="payment_date" value="<?= date('Y-m-d H:i:s') ?>">
                                     </div>
 
                                     <div class="alert alert-warning">
@@ -293,6 +303,24 @@ if (isset($_GET['changeQty']) && isset($_GET['key'])) {
         navigator.clipboard.writeText(promptPay).then(() => {
             alert("คัดลอกเลขพร้อมเพย์แล้ว");
         });
+    }
+
+    function previewSlip(input) {
+        const preview = document.getElementById('slip-preview');
+        const previewImg = preview.querySelector('img');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.style.display = 'none';
+        }
     }
     </script>
 </body>

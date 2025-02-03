@@ -18,6 +18,7 @@ $result = mysqli_query($conn, $sql);
 // เพิ่มสินค้าลงตะกร้า
 if (isset($_GET['id'])) {
     $po_id = $_GET['id'];
+    $search = $_GET['search'] ?? '';  // เก็บค่าการค้นหา
     
     // ตรวจสอบว่ามีตะกร้าสินค้าหรือยัง
     if (!isset($_SESSION["strProductID"])) {
@@ -31,7 +32,7 @@ if (isset($_GET['id'])) {
     
     echo "<script>
         alert('เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว');
-        window.location.href = 'sh_product.php';
+        window.location.href = 'sh_product.php" . ($search ? "?search=" . urlencode($search) : "") . "';
     </script>";
     exit();
 }
@@ -52,6 +53,19 @@ if (isset($_SESSION["strProductID"])) {
         $cart_total += $row_price['price'] * $_SESSION["strQty"][$key];
     }
 }
+
+// เพิ่มฟอร์มค้นหาด้านบน
+$search = $_GET['search'] ?? '';
+$sql = "SELECT p.*, t.type_name 
+        FROM product p 
+        LEFT JOIN type t ON p.type_id = t.type_id 
+        WHERE p.po_name LIKE ? OR t.type_name LIKE ?
+        ORDER BY p.po_id DESC";
+$stmt = $conn->prepare($sql);
+$searchTerm = "%$search%";
+$stmt->bind_param("ss", $searchTerm, $searchTerm);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -82,7 +96,7 @@ if (isset($_SESSION["strProductID"])) {
             transform: translateY(-5px);
         }
         .card-img-top {
-            height: 200px;
+            height: 150px;
             object-fit: cover;
         }
         .product-grid {
@@ -126,6 +140,21 @@ if (isset($_SESSION["strProductID"])) {
             color: #dc3545;
             font-weight: bold;
         }
+        .card-title {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .card-body {
+            padding: 0.75rem;
+        }
+        .card-text {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        .btn {
+            font-size: 0.9rem;
+            padding: 0.375rem 0.75rem;
+        }
     </style>
 </head>
 <body>
@@ -142,6 +171,9 @@ if (isset($_SESSION["strProductID"])) {
                         <a class="nav-link active" href="sh_product.php">สินค้า</a>
                     </li>
                 </ul>
+                
+
+
                 
                 <!-- ตะกร้าสินค้า -->
                 <div class="dropdown me-3">
@@ -222,49 +254,79 @@ if (isset($_SESSION["strProductID"])) {
         </div>
     </nav>
 
-    <!-- Product Grid -->
-    <div class="container product-grid">
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
-            <?php while ($row = mysqli_fetch_assoc($result)) { ?>
+    <!-- แก้ไขส่วนฟอร์มค้นหา -->
+    <div class="container mt-3">
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <form action="" method="GET" class="input-group">
+                    <input type="text" name="search" class="form-control form-control-sm" 
+                           placeholder="ค้นหาสินค้า..." 
+                           value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <?php if(isset($_GET['search'])): ?>
+                        <a href="sh_product.php" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    <?php endif; ?>
+                </form>
+            </div>
+        </div>
+
+        <?php if ($result->num_rows == 0): ?>
+            <div class="alert alert-info py-2 px-3" style="font-size: 0.9rem;">
+                <i class="fas fa-info-circle me-1"></i>
+                <?php if($search): ?>
+                    ไม่พบสินค้าที่ตรงกับ "<?= htmlspecialchars($search) ?>"
+                <?php else: ?>
+                    ไม่มีสินค้าในระบบ
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- แสดงผลการค้นหา -->
+    <div class="container mt-4">
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-6 g-2">
+            <?php while ($row = $result->fetch_assoc()): ?>
                 <div class="col">
                     <div class="card h-100">
-                        <img src="img/<?= $row['image'] ?>" 
-                             class="card-img-top" 
-                             alt="<?= $row['po_name'] ?>">
+                        <img src="img/<?= $row['image'] ?>" class="card-img-top" 
+                             alt="<?= htmlspecialchars($row['po_name']) ?>">
                         <div class="card-body">
-                            <h5 class="card-title"><?= $row['po_name'] ?></h5>
-                            <p class="card-text">
+                            <h5 class="card-title text-truncate" title="<?= htmlspecialchars($row['po_name']) ?>">
+                                <?= $row['po_name'] ?>
+                            </h5>
+                            <p class="card-text mb-1">
                                 <span class="badge bg-info"><?= $row['type_name'] ?></span>
                             </p>
-                            <p class="card-text">
-                                ราคา: <span class="text-primary fw-bold">
-                                    <?= number_format($row['price'], 2) ?> บาท
-                                </span>
+                            <p class="card-text mb-1">
+                                ฿<?= number_format($row['price'], 2) ?>
                             </p>
                             <p class="card-text">
-                                สถานะ: 
-                                <?php if($row['amount'] > 0) { ?>
-                                    <span class="text-success">มีสินค้า <?= $row['amount'] ?> ชิ้น</span>
-                                <?php } else { ?>
-                                    <span class="text-danger">สินค้าหมด</span>
-                                <?php } ?>
+                                <?php if($row['amount'] > 0): ?>
+                                    <small class="text-success">มีสินค้า <?= $row['amount'] ?></small>
+                                <?php else: ?>
+                                    <small class="text-danger">สินค้าหมด</small>
+                                <?php endif; ?>
                             </p>
                         </div>
-                        <div class="card-footer bg-transparent border-top-0">
-                            <?php if($row['amount'] > 0) { ?>
-                                <a href="?id=<?= $row['po_id'] ?>" 
-                                   class="btn btn-primary w-100">
-                                    <i class="fas fa-cart-plus"></i> หยิบใส่ตะกร้า
+                        <div class="card-footer bg-transparent border-top-0 p-2">
+                            <?php if($row['amount'] > 0): ?>
+                                <a href="?id=<?= $row['po_id'] ?><?= isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : '' ?>" 
+                                   class="btn btn-primary btn-sm w-100">
+                                    <i class="fas fa-cart-plus"></i> เพิ่มลงตะกร้า
                                 </a>
-                            <?php } else { ?>
-                                <button class="btn btn-secondary w-100" disabled>
+                            <?php else: ?>
+                                <button class="btn btn-secondary btn-sm w-100" disabled>
                                     <i class="fas fa-times"></i> สินค้าหมด
                                 </button>
-                            <?php } ?>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
-            <?php } ?>
+            <?php endwhile; ?>
         </div>
     </div>
 

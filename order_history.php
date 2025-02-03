@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'condb.php';
+date_default_timezone_set('Asia/Bangkok');  // ตั้งค่า timezone เป็นประเทศไทย
 
 // ตรวจสอบการล็อกอิน
 if (!isset($_SESSION['user_id'])) {
@@ -36,6 +37,13 @@ function getStatusColor($status) {
         default:
             return 'secondary';
     }
+}
+
+// เพิ่มฟังก์ชันแปลงวันที่
+function formatThaiDate($date) {
+    $timestamp = strtotime($date);
+    $year = date('Y', $timestamp) + 543;
+    return date('d/m/', $timestamp) . $year . date(' H:i', $timestamp);
 }
 ?>
 
@@ -94,7 +102,7 @@ function getStatusColor($status) {
                                     <div>
                                         <strong>คำสั่งซื้อ #<?= str_pad($order['order_id'], 8, '0', STR_PAD_LEFT) ?></strong>
                                         <span class="ms-3 text-muted">
-                                            <?= date('d/m/Y H:i', strtotime($order['order_date'])) ?>
+                                            <?= formatThaiDate($order['order_date']) ?>
                                         </span>
                                     </div>
                                     <div>
@@ -187,6 +195,11 @@ function getStatusColor($status) {
                                         <p class="mb-0"><strong>เบอร์โทร:</strong> <?= $order['phone'] ?></p>
                                     </div>
                                 </div>
+
+                                <!-- แก้ไขส่วนแสดงวันที่โอน -->
+                                <p class="mt-2 text-muted">
+                                    วันที่โอน: <?= formatThaiDate($order['payment_date']) ?>
+                                </p>
                             </div>
                         </div>
                     </div>

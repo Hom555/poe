@@ -76,10 +76,12 @@ try {
     }
 
     // บันทึกข้อมูลการสั่งซื้อ
-    $sql = "INSERT INTO orders (user_id, total_amount, name, address, province, district, subdistrict, zipcode, phone, payment_slip, payment_date, status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'รอตรวจสอบการชำระเงิน')";
+    $sql = "INSERT INTO orders (user_id, total_amount, name, address, province, district, 
+            subdistrict, zipcode, phone, payment_slip, payment_date, status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("idssssssss", 
+    $status = 'รอตรวจสอบการชำระเงิน';
+    $stmt->bind_param("idssssssssss", 
         $_SESSION['user_id'],
         $total_amount,
         $_POST['cus_name'],
@@ -90,7 +92,8 @@ try {
         $_POST['zipcode'],
         $_POST['cus_tel'],
         $new_filename,
-        $_POST['payment_date']
+        $_POST['payment_date'],
+        $status
     );
     $stmt->execute();
     $order_id = mysqli_insert_id($conn);
