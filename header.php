@@ -9,22 +9,40 @@ include 'condb.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yaz Shop - <?= $title ?? 'หน้าหลัก' ?></title>
     <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <style>
         .sidebar {
             background-color: #f8f9fa;
             padding: 20px;
             height: 100vh;
+            border-right: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar .brand {
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .sidebar .nav-item {
+            margin-bottom: 5px;
         }
         .sidebar a {
             display: block;
-            padding: 10px;
+            padding: 12px 15px;
             text-decoration: none;
             color: #333;
             transition: all 0.3s;
+            border-radius: 5px;
         }
         .sidebar a:hover {
             background-color: #e9ecef;
             transform: translateX(10px);
+        }
+        .sidebar a i {
+            width: 25px;
+            margin-right: 10px;
+            text-align: center;
         }
         .content {
             padding: 20px;
@@ -47,6 +65,55 @@ include 'condb.php';
         .img-thumbnail {
             border-radius: 10px;
         }
+        .user-menu {
+            display: none;
+        }
+        .nav-items {
+            flex: 1;
+            margin-bottom: 20px;
+        }
+        .sidebar .dropdown {
+            margin-top: auto;
+        }
+        .sidebar .dropdown-toggle {
+            width: 100%;
+            text-align: left;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 12px 15px;
+            border-radius: 5px;
+            color: #333;
+        }
+        .sidebar .dropdown-toggle:hover,
+        .sidebar .dropdown-toggle:focus {
+            background-color: #e9ecef;
+        }
+        .sidebar .dropdown-menu {
+            width: 100%;
+            margin-top: 5px;
+            position: absolute;
+            inset: auto auto 0 0;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 8px;
+        }
+        .sidebar .dropdown-item {
+            padding: 8px 15px;
+            border-radius: 4px;
+        }
+        .sidebar .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        .sidebar .dropdown-item i {
+            width: 20px;
+            margin-right: 10px;
+            text-align: center;
+        }
+        .sidebar .dropdown-divider {
+            margin: 8px 0;
+            border-top: 1px solid #dee2e6;
+        }
     </style>
 </head>
 <body>
@@ -54,13 +121,43 @@ include 'condb.php';
         <div class="row">
             <!-- Sidebar -->
             <nav class="col-md-2 d-none d-md-block sidebar">
-                <h4 class="text-center mb-4">Yaz</h4>
-                <a href="yaz.php">หน้าหลัก</a>
-                <a href="sh_product_ad.php">สินค้า</a>
-                <a href="type_product.php">ประเภทสินค้า</a>
-                <a href="order_detail.php">คำสั่งซื้อ</a>
-                <a href="add_product.php">เพิ่มข้อมูลสินค้า</a>
-                <a href="type_product.php">จัดการประเภทสินค้า</a>
+                <div class="brand">
+                    <h4 class="text-center mb-0">Yaz Shop</h4>
+                </div>
+                <div class="nav-items">
+                    <div class="nav-item">
+                        <a href="yaz.php"><i class="fas fa-home"></i>หน้าหลัก</a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="users.php"><i class="fas fa-users"></i>จัดการผู้ใช้งาน</a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="sh_product_ad.php"><i class="fas fa-box"></i>สินค้า</a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="type_product.php"><i class="fas fa-tags"></i>ประเภทสินค้า</a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="order_detail.php"><i class="fas fa-shopping-cart"></i>คำสั่งซื้อ</a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="add_product.php"><i class="fas fa-plus-circle"></i>เพิ่มสินค้า</a>
+                    </div>
+                </div>
+
+                <!-- User Menu -->
+                <div class="dropdown">
+                    <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user"></i> admin
+                    </button>
+                   
+                        
+                            <a class="dropdown-item text-danger" href="logout.php">
+                                <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
+                            </a>
+                        
+                    </ul>
+                </div>
             </nav>
 
             <!-- Main Content -->

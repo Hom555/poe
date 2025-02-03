@@ -1,142 +1,147 @@
 <?php
-// Database connection
-$servername = "localhost";
-$username = "root";
-$password = "12345678";
-$database = "dro";
+session_start();
+include 'condb.php';
 
-$conn = new mysqli($servername, $username, $password, $database);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+// ตรวจสอบสิทธิ์แอดมิน
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] != 1) {
+    header("Location: login.php");
+    exit();
 }
 
-$title = "แก้ไขข้อมูลผู้ใช้งาน";
-include 'header.php';
-
-// Initialize variables
-$user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
+$user_id = $_GET['id'] ?? 0;
 $errors = [];
-$user = null;
 
-// Fetch user data
-if ($user_id) {
-    $sql = "SELECT * FROM users WHERE user_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $user = $result->fetch_assoc();
-    $stmt->close();
+// ดึงข้อมูลผู้ใช้
+$sql = "SELECT * FROM users WHERE user_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$user = $result->fetch_assoc();
+
+if (!$user) {
+    header("Location: users.php");
+    exit();
 }
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// จัดการการส่งฟอร์ม
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = trim($_POST['username']);
     $email = trim($_POST['email']);
     $phone = trim($_POST['phone']);
-    $address = trim($_POST['address']); // เพิ่มที่อยู่
-
-    // Validate inputs
+    $status = $_POST['status'];
+    $new_password = trim($_POST['new_password']);
+    
+    // ตรวจสอบข้อมูล
     if (empty($username)) {
-        $errors[] = "ชื่อผู้ใช้งานห้ามเว้นว่าง";
+        $errors[] = "กรุณากรอกชื่อผู้ใช้";
     }
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = "อีเมลไม่ถูกต้อง";
+    if (empty($email)) {
+        $errors[] = "กรุณากรอกอีเมล";
     }
-    if (!preg_match('/^[0-9]{10}$/', $phone)) {
-        $errors[] = "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก";
+    if (!empty($new_password) && strlen($new_password) < 6) {
+        $errors[] = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร";
     }
-
-    // Update user data if no errors
+    
     if (empty($errors)) {
-        $update_sql = "UPDATE users SET username = ?, email = ?, phone = ?, address = ? WHERE user_id = ?";
-        $stmt = $conn->prepare($update_sql);
-        $stmt->bind_param("ssssi", $username, $email, $phone, $address, $user_id);
-
+        // อัพเดทข้อมูล
+        if (!empty($new_password)) {
+            $sql = "UPDATE users SET 
+                    username = ?, 
+                    email = ?, 
+                    phone = ?,
+                    status = ?,
+                    password = ?
+                    WHERE user_id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("sssisi", $username, $email, $phone, $status, $new_password, $user_id);
+        } else {
+            $sql = "UPDATE users SET 
+                    username = ?, 
+                    email = ?, 
+                    phone = ?,
+                    status = ?
+                    WHERE user_id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("sssii", $username, $email, $phone, $status, $user_id);
+        }
+        
         if ($stmt->execute()) {
             echo "<script>
-                alert('อัพเดทข้อมูลเรียบร้อย');
-                window.location.href = 'yaz.php';
+                alert('บันทึกข้อมูลเรียบร้อยแล้ว');
+                window.location.href = 'users.php';
             </script>";
+            exit();
         } else {
-            $errors[] = "เกิดข้อผิดพลาดในการอัพเดทข้อมูล";
+            $errors[] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล";
         }
-        $stmt->close();
     }
 }
+
+$title = "แก้ไขข้อมูลผู้ใช้";
+include 'header.php';
 ?>
 
-<div class="card">
-    <div class="card-header">
-        <h4 class="mb-0">แก้ไขข้อมูลผู้ใช้งาน</h4>
-    </div>
-    <div class="card-body">
-        <?php if ($user): ?>
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">แก้ไขข้อมูลผู้ใช้</h4>
+        </div>
+        <div class="card-body">
             <?php if (!empty($errors)): ?>
                 <div class="alert alert-danger">
                     <ul class="mb-0">
                         <?php foreach ($errors as $error): ?>
-                            <li><?php echo htmlspecialchars($error); ?></li>
+                            <li><?= $error ?></li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
             <?php endif; ?>
 
-            <form method="POST" action="">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="username" class="form-label">ชื่อผู้ใช้งาน</label>
-                            <input type="text" id="username" name="username" 
-                                   class="form-control" 
-                                   value="<?php echo htmlspecialchars($user['username']); ?>" 
-                                   required>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="email" class="form-label">อีเมล</label>
-                            <input type="email" id="email" name="email" 
-                                   class="form-control" 
-                                   value="<?php echo htmlspecialchars($user['email']); ?>" 
-                                   required>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="phone" class="form-label">เบอร์โทรศัพท์</label>
-                            <input type="text" id="phone" name="phone" 
-                                   class="form-control" 
-                                   value="<?php echo htmlspecialchars($user['phone']); ?>" 
-                                   required>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="address" class="form-label">ที่อยู่</label>
-                            <textarea id="address" name="address" 
-                                      class="form-control" 
-                                      rows="3"><?php echo htmlspecialchars($user['address'] ?? ''); ?></textarea>
-                        </div>
-                    </div>
-                </div>
-
+            <form method="POST">
                 <div class="mb-3">
-                    <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
-                    <a href="yaz.php" class="btn btn-secondary">ยกเลิก</a>
+                    <label class="form-label">ชื่อผู้ใช้</label>
+                    <input type="text" name="username" class="form-control" 
+                           value="<?= htmlspecialchars($user['username']) ?>" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">อีเมล</label>
+                    <input type="email" name="email" class="form-control" 
+                           value="<?= htmlspecialchars($user['email']) ?>" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">เบอร์โทร</label>
+                    <input type="tel" name="phone" class="form-control" 
+                           value="<?= htmlspecialchars($user['phone']) ?>">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">สถานะ</label>
+                    <select name="status" class="form-select" 
+                            <?= ($user['user_id'] == $_SESSION['user_id']) ? 'disabled' : '' ?>>
+                        <option value="2" <?= ($user['status'] == 2) ? 'selected' : '' ?>>
+                            ผู้ใช้งานทั่วไป
+                        </option>
+                        <option value="1" <?= ($user['status'] == 1) ? 'selected' : '' ?>>
+                            ผู้ดูแลระบบ
+                        </option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">รหัสผ่านใหม่</label>
+                    <input type="password" name="new_password" class="form-control">
+                    <small class="text-muted">เว้นว่างไว้หากไม่ต้องการเปลี่ยนรหัสผ่าน</small>
+                </div>
+                
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary">บันทึก</button>
+                    <a href="users.php" class="btn btn-secondary">ยกเลิก</a>
                 </div>
             </form>
-        <?php else: ?>
-            <div class="alert alert-warning">
-                ไม่พบข้อมูลผู้ใช้งาน
-                <a href="yaz.php" class="btn btn-secondary ms-3">กลับหน้าหลัก</a>
-            </div>
-        <?php endif; ?>
+        </div>
     </div>
 </div>
 

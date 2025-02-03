@@ -4,13 +4,12 @@ $dbusername = "root";
 $dbpassword = "12345678";
 $dbname = "dro";
 
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+// สร้างการเชื่อมต่อ
+$conn = mysqli_connect($servername, $dbusername, $dbpassword, $dbname);
 
-try {
-    $conn = mysqli_connect($servername, $dbusername, $dbpassword, $dbname);
-    $conn->set_charset("utf8");
-} catch (Exception $e) {
-    die("Connection failed: " . $e->getMessage());
+// ตรวจสอบการเชื่อมต่อ
+if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
 }
 
 // ปิดการเชื่อมต่ออัตโนมัติในตอนจบ
