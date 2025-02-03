@@ -17,6 +17,48 @@ if (!isset($_POST['cus_name'], $_POST['cus_add'], $_POST['province'],
     exit();
 }
 
+// เพิ่มการตรวจสอบไฟล์
+if (!isset($_FILES['payment_slip']) || $_FILES['payment_slip']['error'] !== UPLOAD_ERR_OK) {
+    echo "<script>
+        alert('กรุณาแนบสลิปการโอนเงิน');
+        window.history.back();
+    </script>";
+    exit();
+}
+
+// ตรวจสอบประเภทไฟล์
+$allowed = ['jpg', 'jpeg', 'png'];
+$file_ext = strtolower(pathinfo($_FILES['payment_slip']['name'], PATHINFO_EXTENSION));
+if (!in_array($file_ext, $allowed)) {
+    echo "<script>
+        alert('รองรับเฉพาะไฟล์ภาพ jpg, jpeg, png เท่านั้น');
+        window.history.back();
+    </script>";
+    exit();
+}
+
+// ตรวจสอบขนาดไฟล์ (2MB)
+if ($_FILES['payment_slip']['size'] > 2 * 1024 * 1024) {
+    echo "<script>
+        alert('ขนาดไฟล์ต้องไม่เกิน 2MB');
+        window.history.back();
+    </script>";
+    exit();
+}
+
+// สร้างชื่อไฟล์ใหม่
+$new_filename = uniqid() . '.' . $file_ext;
+$upload_path = 'uploads/slips/' . $new_filename;
+
+// อัพโหลดไฟล์
+if (!move_uploaded_file($_FILES['payment_slip']['tmp_name'], $upload_path)) {
+    echo "<script>
+        alert('เกิดข้อผิดพลาดในการอัพโหลดไฟล์');
+        window.history.back();
+    </script>";
+    exit();
+}
+
 try {
     // เริ่ม transaction
     mysqli_query($conn, "START TRANSACTION");
@@ -34,10 +76,10 @@ try {
     }
 
     // บันทึกข้อมูลการสั่งซื้อ
-    $sql = "INSERT INTO orders (user_id, total_amount, name, address, province, district, subdistrict, zipcode, phone) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO orders (user_id, total_amount, name, address, province, district, subdistrict, zipcode, phone, payment_slip, payment_date, status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'รอตรวจสอบการชำระเงิน')";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("idsssssss", 
+    $stmt->bind_param("idssssssss", 
         $_SESSION['user_id'],
         $total_amount,
         $_POST['cus_name'],
@@ -46,7 +88,9 @@ try {
         $_POST['district'],
         $_POST['subdistrict'],
         $_POST['zipcode'],
-        $_POST['cus_tel']
+        $_POST['cus_tel'],
+        $new_filename,
+        $_POST['payment_date']
     );
     $stmt->execute();
     $order_id = mysqli_insert_id($conn);

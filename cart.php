@@ -171,7 +171,7 @@ if (isset($_GET['changeQty']) && isset($_GET['key'])) {
 
             <!-- ฟอร์มข้อมูลจัดส่ง -->
             <div class="col-md-4">
-                <div class="card">
+                <div class="card mb-3">
                     <div class="card-header bg-success text-white">
                         <h5 class="mb-0">
                             <i class="fas fa-shipping-fast me-2"></i>ข้อมูลจัดส่ง
@@ -228,7 +228,54 @@ if (isset($_GET['changeQty']) && isset($_GET['key'])) {
                                 <input type="tel" name="cus_tel" class="form-control" 
                                        value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required>
                             </div>
-                            <button type="submit" class="btn btn-success w-100">
+
+                            <!-- เพิ่มส่วนการชำระเงิน -->
+                            <div class="card mt-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-money-bill-wave me-2"></i>การชำระเงิน
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center mb-3">
+                                        <img src="img/promptpay-qr.png" alt="QR Code" class="img-fluid mb-2" style="max-width: 200px;">
+                                        <div class="d-flex justify-content-center align-items-center gap-2">
+                                            <span class="fw-bold">พร้อมเพย์:</span>
+                                            <span>xxx-xxx-xxxx</span>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="copyPromptPay()">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">ยอดชำระ</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">฿</span>
+                                            <input type="text" class="form-control text-end" 
+                                                   value="<?= number_format($total, 2) ?>" readonly>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">แนบสลิปการโอนเงิน</label>
+                                        <input type="file" name="payment_slip" class="form-control" accept="image/*" required>
+                                        <div class="form-text">รองรับไฟล์ภาพ jpg, jpeg, png ขนาดไม่เกิน 2MB</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">วันที่โอน</label>
+                                        <input type="datetime-local" name="payment_date" class="form-control" required>
+                                    </div>
+
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        กรุณาชำระเงินและแนบสลิปก่อนกดยืนยันการสั่งซื้อ
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100 mt-3">
                                 <i class="fas fa-check-circle me-2"></i>ยืนยันการสั่งซื้อ
                             </button>
                         </form>
@@ -239,6 +286,15 @@ if (isset($_GET['changeQty']) && isset($_GET['key'])) {
     </div>
 
     <script src="bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+    function copyPromptPay() {
+        // เพิ่มเลขพร้อมเพย์ที่ต้องการ
+        const promptPay = "xxx-xxx-xxxx";
+        navigator.clipboard.writeText(promptPay).then(() => {
+            alert("คัดลอกเลขพร้อมเพย์แล้ว");
+        });
+    }
+    </script>
 </body>
 </html>
 
