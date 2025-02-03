@@ -31,9 +31,26 @@ if (isset($_GET['id'])) {
     
     echo "<script>
         alert('เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว');
-        window.location.href = 'cart.php';
+        window.location.href = 'sh_product.php';
     </script>";
     exit();
+}
+
+// คำนวณจำนวนสินค้าในตะกร้า
+$cart_count = isset($_SESSION["strProductID"]) ? count($_SESSION["strProductID"]) : 0;
+
+// คำนวณราคารวมในตะกร้า
+$cart_total = 0;
+if (isset($_SESSION["strProductID"])) {
+    foreach ($_SESSION["strProductID"] as $key => $product_id) {
+        $sql = "SELECT price FROM product WHERE po_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $product_id);
+        $stmt->execute();
+        $result_price = $stmt->get_result();
+        $row_price = $result_price->fetch_assoc();
+        $cart_total += $row_price['price'] * $_SESSION["strQty"][$key];
+    }
 }
 ?>
 
@@ -71,6 +88,44 @@ if (isset($_GET['id'])) {
         .product-grid {
             padding: 20px;
         }
+        .cart-icon {
+            position: relative;
+            cursor: pointer;
+        }
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+        }
+        .cart-dropdown {
+            min-width: 300px;
+            padding: 15px;
+        }
+        .cart-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .cart-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+        .cart-item-details {
+            flex-grow: 1;
+        }
+        .cart-item-price {
+            color: #dc3545;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -87,6 +142,59 @@ if (isset($_GET['id'])) {
                         <a class="nav-link active" href="sh_product.php">สินค้า</a>
                     </li>
                 </ul>
+                
+                <!-- ตะกร้าสินค้า -->
+                <div class="dropdown me-3">
+                    <div class="cart-icon" data-bs-toggle="dropdown">
+                        <i class="fas fa-shopping-cart fa-lg"></i>
+                        <?php if ($cart_count > 0): ?>
+                            <span class="cart-count"><?= $cart_count ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="dropdown-menu dropdown-menu-end cart-dropdown">
+                        <?php if ($cart_count > 0): ?>
+                            <?php
+                            foreach ($_SESSION["strProductID"] as $key => $product_id):
+                                $sql = "SELECT * FROM product WHERE po_id = ?";
+                                $stmt = $conn->prepare($sql);
+                                $stmt->bind_param("i", $product_id);
+                                $stmt->execute();
+                                $result_cart = $stmt->get_result();
+                                $item = $result_cart->fetch_assoc();
+                                $subtotal = $item['price'] * $_SESSION["strQty"][$key];
+                            ?>
+                                <div class="cart-item">
+                                    <img src="img/<?= $item['image'] ?>" alt="<?= $item['po_name'] ?>">
+                                    <div class="cart-item-details">
+                                        <div><?= $item['po_name'] ?></div>
+                                        <div class="text-muted">
+                                            <?= $_SESSION["strQty"][$key] ?> x 
+                                            <span class="cart-item-price">
+                                                ฿<?= number_format($item['price'], 2) ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div>
+                                    <strong>รวมทั้งหมด:</strong>
+                                    <span class="cart-item-price">฿<?= number_format($cart_total, 2) ?></span>
+                                </div>
+                                <a href="cart.php" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-shopping-cart"></i> ดูตะกร้า
+                                </a>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-center py-3">
+                                <i class="fas fa-shopping-cart fa-2x text-muted mb-2"></i>
+                                <p class="text-muted mb-0">ไม่มีสินค้าในตะกร้า</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- User Menu -->
                 <div class="dropdown">
                     <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown">
                         <i class="fas fa-user"></i> <?= htmlspecialchars($_SESSION['username']) ?>

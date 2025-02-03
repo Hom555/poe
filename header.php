@@ -138,7 +138,7 @@ include 'condb.php';
                         <a href="type_product.php"><i class="fas fa-tags"></i>ประเภทสินค้า</a>
                     </div>
                     <div class="nav-item">
-                        <a href="order_detail.php"><i class="fas fa-shopping-cart"></i>คำสั่งซื้อ</a>
+                        <a href="admin_orders.php"><i class="fas fa-shopping-cart"></i>คำสั่งซื้อ</a>
                     </div>
                     <div class="nav-item">
                         <a href="add_product.php"><i class="fas fa-plus-circle"></i>เพิ่มสินค้า</a>

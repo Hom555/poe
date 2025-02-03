@@ -19,6 +19,24 @@ $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $_SESSION['user_id']);
 $stmt->execute();
 $orders = $stmt->get_result();
+
+// ฟังก์ชันกำหนดสีตามสถานะ
+function getStatusColor($status) {
+    switch ($status) {
+        case 'รอการชำระเงิน':
+            return 'warning';
+        case 'ชำระเงินแล้ว':
+            return 'info';
+        case 'กำลังจัดส่ง':
+            return 'primary';
+        case 'จัดส่งแล้ว':
+            return 'success';
+        case 'ยกเลิก':
+            return 'danger';
+        default:
+            return 'secondary';
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -35,11 +53,12 @@ $orders = $stmt->get_result();
             padding: 0.25rem 0.5rem;
             border-radius: 0.25rem;
         }
-        .status-pending { background-color: #ffeeba; }
-        .status-processing { background-color: #b8daff; }
-        .status-shipped { background-color: #c3e6cb; }
-        .status-delivered { background-color: #d4edda; }
-        .status-cancelled { background-color: #f5c6cb; }
+        .status-warning { background-color: #ffeeba; color: #856404; }
+        .status-info { background-color: #b8daff; color: #004085; }
+        .status-primary { background-color: #c3e6cb; color: #155724; }
+        .status-success { background-color: #d4edda; color: #155724; }
+        .status-danger { background-color: #f5c6cb; color: #721c24; }
+        .status-secondary { background-color: #e2e3e5; color: #383d41; }
     </style>
 </head>
 <body>
@@ -79,7 +98,7 @@ $orders = $stmt->get_result();
                                         </span>
                                     </div>
                                     <div>
-                                        <span class="order-status status-<?= strtolower($order['status']) ?>">
+                                        <span class="order-status status-<?= getStatusColor($order['status']) ?>">
                                             <?= $order['status'] ?>
                                         </span>
                                         <span class="ms-3">
