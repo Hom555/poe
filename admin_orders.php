@@ -271,5 +271,10 @@ function formatThaiDate($date) {
     return date('d/m/', $timestamp) . $year . date(' H:i', $timestamp);
 }
 
+// ปิดการเชื่อมต่อก่อน include footer
+if (isset($conn)) {
+    mysqli_close($conn);
+}
+
 include 'footer.php';
 ?> 
