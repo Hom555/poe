@@ -1,0 +1,25 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # อนุญาตให้เข้าถึงไฟล์รูปภาพได้
+    <FilesMatch "\.(jpg|jpeg|png|gif)$">
+        Order Allow,Deny
+        Allow from all
+    </FilesMatch>
+</IfModule>
+
+# ป้องกันการลิสต์ไฟล์ในโฟลเดอร์
+Options -Indexes
+
+# อนุญาตให้เข้าถึงไฟล์รูปภาพ
+<FilesMatch "\.(jpg|jpeg|png|gif)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# อนุญาตให้เข้าถึงโฟลเดอร์ slips
+<Directory "slips">
+    Options -Indexes
+    Allow from all
+    Require all granted
+</Directory> 

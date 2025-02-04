@@ -1,5 +1,12 @@
 <?php
-session_start();
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+// ย้าย session_start() ไปไว้ที่นี่
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 include 'condb.php';
 date_default_timezone_set('Asia/Bangkok');
 
@@ -83,11 +90,25 @@ $result = mysqli_query($conn, $sql);
                                             </span>
                                         </td>
                                         <td>
-                                            <button type="button" class="btn btn-info btn-sm" 
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#orderModal<?= $row['order_id'] ?>">
-                                                <i class="fas fa-eye"></i> ดูรายละเอียด
-                                            </button>
+                                            <div class="dropdown">
+                                                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fas fa-cog"></i> จัดการ
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <button type="button" class="dropdown-item" 
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#orderModal<?= $row['order_id'] ?>">
+                                                            <i class="fas fa-eye"></i> ดูรายละเอียด
+                                                        </button>
+                                                    </li>
+                                                    <li>
+                                                        <a href="print_order.php?id=<?= $row['order_id'] ?>" class="dropdown-item" target="_blank">
+                                                            <i class="fas fa-print"></i> พิมพ์ใบสั่งซื้อ
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </td>
                                     </tr>
 
@@ -158,12 +179,21 @@ $result = mysqli_query($conn, $sql);
                                                         <h6 class="border-bottom pb-2">หลักฐานการโอนเงิน</h6>
                                                         <div class="text-center">
                                                             <?php if (!empty($row['payment_slip'])): ?>
-                                                                <img src="slip/<?= $row['payment_slip'] ?>" 
-                                                                     alt="สลิปการโอนเงิน" 
-                                                                     class="img-fluid" style="max-height: 300px;">
-                                                                <p class="mt-2 text-muted">
-                                                                    วันที่โอน: <?= formatThaiDate($row['payment_date']) ?>
-                                                                </p>
+                                                                <?php 
+                                                                $slip_path = "slips/" . $row['payment_slip'];
+                                                                if (file_exists($slip_path)): 
+                                                                ?>
+                                                                    <img src="<?= $slip_path ?>" 
+                                                                         alt="สลิปการโอนเงิน" 
+                                                                         class="img-fluid" style="max-height: 300px;">
+                                                                    <p class="mt-2 text-muted">
+                                                                        วันที่โอน: <?= formatThaiDate($row['payment_date']) ?>
+                                                                    </p>
+                                                                <?php else: ?>
+                                                                    <div class="alert alert-warning">
+                                                                        ไม่พบไฟล์รูปภาพ (<?= htmlspecialchars($row['payment_slip']) ?>)
+                                                                    </div>
+                                                                <?php endif; ?>
                                                             <?php else: ?>
                                                                 <p class="text-muted">ไม่พบหลักฐานการโอนเงิน</p>
                                                             <?php endif; ?>

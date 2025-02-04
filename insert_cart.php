@@ -17,45 +17,54 @@ if (!isset($_POST['cus_name'], $_POST['cus_add'], $_POST['province'],
     exit();
 }
 
-// เพิ่มการตรวจสอบไฟล์
-if (!isset($_FILES['payment_slip']) || $_FILES['payment_slip']['error'] !== UPLOAD_ERR_OK) {
-    echo "<script>
-        alert('กรุณาแนบสลิปการโอนเงิน');
-        window.history.back();
-    </script>";
-    exit();
-}
+// จัดการอัพโหลดสลิป
+if (isset($_FILES['payment_slip']) && $_FILES['payment_slip']['error'] == 0) {
+    $file = $_FILES['payment_slip'];
+    
+    // ตรวจสอบว่าเป็นไฟล์รูปภาพจริง
+    $check = getimagesize($file['tmp_name']);
+    if($check === false) {
+        echo "<script>alert('ไฟล์ที่อัพโหลดไม่ใช่รูปภาพ'); window.history.back();</script>";
+        exit();
+    }
+    
+    // ตรวจสอบประเภทไฟล์
+    $allowed_types = ['image/jpeg', 'image/png'];
+    if (!in_array($file['type'], $allowed_types)) {
+        echo "<script>alert('รองรับเฉพาะไฟล์ .jpg และ .png เท่านั้น'); window.history.back();</script>";
+        exit();
+    }
 
-// ตรวจสอบประเภทไฟล์
-$allowed = ['jpg', 'jpeg', 'png'];
-$file_ext = strtolower(pathinfo($_FILES['payment_slip']['name'], PATHINFO_EXTENSION));
-if (!in_array($file_ext, $allowed)) {
-    echo "<script>
-        alert('รองรับเฉพาะไฟล์ภาพ jpg, jpeg, png เท่านั้น');
-        window.history.back();
-    </script>";
-    exit();
-}
-
-// ตรวจสอบขนาดไฟล์ (2MB)
-if ($_FILES['payment_slip']['size'] > 2 * 1024 * 1024) {
-    echo "<script>
-        alert('ขนาดไฟล์ต้องไม่เกิน 2MB');
-        window.history.back();
-    </script>";
-    exit();
-}
-
-// สร้างชื่อไฟล์ใหม่
-$new_filename = uniqid() . '.' . $file_ext;
-$upload_path = 'uploads/slips/' . $new_filename;
-
-// อัพโหลดไฟล์
-if (!move_uploaded_file($_FILES['payment_slip']['tmp_name'], $upload_path)) {
-    echo "<script>
-        alert('เกิดข้อผิดพลาดในการอัพโหลดไฟล์');
-        window.history.back();
-    </script>";
+    // สร้างชื่อไฟล์ใหม่
+    $timestamp = time();
+    $unique = uniqid();
+    $file_extension = ($file['type'] == 'image/jpeg') ? '.jpg' : '.png';
+    $new_filename = $timestamp . '_' . $unique . $file_extension;
+    
+    // สร้างโฟลเดอร์ถ้ายังไม่มี
+    if (!file_exists('slips')) {
+        mkdir('slips', 0777, true);
+    }
+    
+    // ย้ายไฟล์
+    $upload_path = 'slips/' . $new_filename;
+    
+    // อ่านไฟล์รูปภาพและบันทึกใหม่
+    $image_data = file_get_contents($file['tmp_name']);
+    if ($image_data === false) {
+        echo "<script>alert('ไม่สามารถอ่านไฟล์รูปภาพได้'); window.history.back();</script>";
+        exit();
+    }
+    
+    if (file_put_contents($upload_path, $image_data) === false) {
+        echo "<script>alert('ไม่สามารถบันทึกไฟล์รูปภาพได้'); window.history.back();</script>";
+        exit();
+    }
+    
+    chmod($upload_path, 0777);
+    $payment_slip = $new_filename;
+} else {
+    echo "<script>alert('กรุณาแนบสลิปการโอนเงิน'); window.history.back();</script>";
     exit();
 }
 
@@ -91,7 +100,7 @@ try {
         $_POST['subdistrict'],
         $_POST['zipcode'],
         $_POST['cus_tel'],
-        $new_filename,
+        $payment_slip,
         $_POST['payment_date'],
         $status
     );

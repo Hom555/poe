@@ -1,5 +1,8 @@
 <?php
-session_start();
+// ตรวจสอบก่อนเริ่ม session
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 include 'condb.php';
 ?>
 <!DOCTYPE html>

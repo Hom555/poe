@@ -241,7 +241,7 @@ if (isset($_GET['changeQty']) && isset($_GET['key'])) {
                                         <img src="img/Screenshot 2025-02-03 133753.png" alt="QR Code" class="img-fluid mb-2" style="max-width: 200px;">
                                         <div class="d-flex justify-content-center align-items-center gap-2">
                                             <span class="fw-bold">พร้อมเพย์:</span>
-                                            <span>xxx-xxx-xxxx</span>
+                                            <span>09x-xxx-xxxx</span>
                                             <button type="button" class="btn btn-sm btn-outline-primary" onclick="copyPromptPay()">
                                                 <i class="fas fa-copy"></i>
                                             </button>
@@ -258,14 +258,54 @@ if (isset($_GET['changeQty']) && isset($_GET['key'])) {
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">แนบสลิปการโอนเงิน</label>
-                                        <input type="file" name="payment_slip" class="form-control" accept="image/*" required 
-                                               onchange="previewSlip(this)">
-                                        <div class="form-text">รองรับไฟล์ภาพ jpg, jpeg, png ขนาดไม่เกิน 2MB</div>
-                                        <div id="slip-preview" class="mt-2 text-center" style="display: none;">
-                                            <img src="" alt="ตัวอย่างสลิป" class="img-fluid" style="max-height: 200px;">
-                                        </div>
-                                    </div>
+    <label class="form-label">แนบสลิปการโอนเงิน</label>
+    <input type="file" name="payment_slip" class="form-control" 
+           accept="image/jpeg,image/png" required 
+           onchange="validateFile(this)">
+    <div class="form-text">รองรับไฟล์ภาพ jpg, jpeg, png ขนาดไม่เกิน 2MB</div>
+    
+    <div id="slip-preview" class="mt-2 text-center" style="display: none;">
+        <img id="preview-img" src="" alt="ตัวอย่างสลิป" class="img-fluid" style="max-height: 200px;">
+    </div>
+</div>
+
+<script>
+function validateFile(input) {
+    const file = input.files[0];
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    const allowedTypes = ["image/jpeg", "image/png"];
+    const preview = document.getElementById("slip-preview");
+    const previewImg = document.getElementById("preview-img");
+
+    if (file) {
+        // ตรวจสอบประเภทไฟล์
+        if (!allowedTypes.includes(file.type)) {
+            alert("อนุญาตเฉพาะไฟล์ JPG หรือ PNG เท่านั้น");
+            input.value = ""; // ล้างค่า input
+            preview.style.display = "none";
+            return;
+        }
+
+        // ตรวจสอบขนาดไฟล์
+        if (file.size > maxSize) {
+            alert("ขนาดไฟล์ต้องไม่เกิน 2MB");
+            input.value = ""; // ล้างค่า input
+            preview.style.display = "none";
+            return;
+        }
+
+        // แสดงตัวอย่างรูป
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            previewImg.src = e.target.result;
+            preview.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.style.display = "none";
+    }
+}
+</script>
 
                                     <div class="mb-3">
                                         <label class="form-label">วันที่โอน</label>
@@ -299,7 +339,7 @@ if (isset($_GET['changeQty']) && isset($_GET['key'])) {
     <script>
     function copyPromptPay() {
         // เพิ่มเลขพร้อมเพย์ที่ต้องการ
-        const promptPay = "xxx-xxx-xxxx";
+        const promptPay = "09x-xxx-xxxx";
         navigator.clipboard.writeText(promptPay).then(() => {
             alert("คัดลอกเลขพร้อมเพย์แล้ว");
         });
@@ -320,6 +360,29 @@ if (isset($_GET['changeQty']) && isset($_GET['key'])) {
             reader.readAsDataURL(input.files[0]);
         } else {
             preview.style.display = 'none';
+        }
+    }
+
+    function validateFile(input) {
+        const file = input.files[0];
+        const maxSize = 2 * 1024 * 1024; // 2MB
+        const allowedTypes = ['image/jpeg', 'image/png'];
+        
+        if (file) {
+            if (file.size > maxSize) {
+                alert('ขนาดไฟล์ต้องไม่เกิน 2MB');
+                input.value = '';
+                return;
+            }
+            
+            if (!allowedTypes.includes(file.type)) {
+                alert('รองรับเฉพาะไฟล์ภาพ jpg, jpeg และ png เท่านั้น');
+                input.value = '';
+                return;
+            }
+            
+            // แสดงตัวอย่างภาพ
+            previewSlip(input);
         }
     }
     </script>

@@ -197,9 +197,21 @@ function formatThaiDate($date) {
                                 </div>
 
                                 <!-- แก้ไขส่วนแสดงวันที่โอน -->
-                                <p class="mt-2 text-muted">
-                                    วันที่โอน: <?= formatThaiDate($order['payment_date']) ?>
-                                </p>
+                                <div class="mt-4">
+                                    <h6 class="border-bottom pb-2">หลักฐานการโอนเงิน</h6>
+                                    <div class="text-center">
+                                        <?php if (!empty($order['payment_slip'])): ?>
+                                            <img src="slips/<?= $order['payment_slip'] ?>" 
+                                                 alt="สลิปการโอนเงิน" 
+                                                 class="img-fluid" style="max-height: 300px;">
+                                            <p class="mt-2 text-muted">
+                                                วันที่โอน: <?= formatThaiDate($order['payment_date']) ?>
+                                            </p>
+                                        <?php else: ?>
+                                            <p class="text-muted">ไม่พบหลักฐานการโอนเงิน</p>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
