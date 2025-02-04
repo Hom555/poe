@@ -103,7 +103,9 @@ $result = mysqli_query($conn, $sql);
                                                         </button>
                                                     </li>
                                                     <li>
-                                                        <a href="print_order.php?id=<?= $row['order_id'] ?>" class="dropdown-item" target="_blank">
+                                                        <a href="print_order.php?order_id=<?= $row['order_id'] ?>" 
+                                                           class="dropdown-item" 
+                                                           target="_blank">
                                                             <i class="fas fa-print"></i> พิมพ์ใบสั่งซื้อ
                                                         </a>
                                                     </li>
