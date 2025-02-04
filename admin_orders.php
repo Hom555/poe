@@ -2,7 +2,6 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// ย้าย session_start() ไปไว้ที่นี่
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
@@ -34,7 +33,11 @@ $title = "จัดการคำสั่งซื้อ";
 include 'header.php';
 
 // ดึงข้อมูลคำสั่งซื้อ
-$sql = "SELECT o.*, u.username, u.name as customer_name, COUNT(od.id) as total_items 
+$sql = "SELECT o.*, u.username, COUNT(od.id) as total_items,
+        (SELECT GROUP_CONCAT(CONCAT(p.po_name, ' (', od2.quantity, ')'))
+         FROM order_details od2 
+         JOIN product p ON od2.product_id = p.po_id 
+         WHERE od2.order_id = o.order_id) as product_list
         FROM orders o 
         LEFT JOIN users u ON o.user_id = u.user_id 
         LEFT JOIN order_details od ON o.order_id = od.order_id 
@@ -43,78 +46,79 @@ $sql = "SELECT o.*, u.username, u.name as customer_name, COUNT(od.id) as total_i
 $result = mysqli_query($conn, $sql);
 ?>
 
-<div class="container-fluid">
+<div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
                         <i class="fas fa-shopping-cart me-2"></i>คำสั่งซื้อทั้งหมด
                     </h3>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead>
+                        <table class="table table-hover table-striped">
+                            <thead class="table-light">
                                 <tr>
-                                    <th>เลขที่คำสั่งซื้อ</th>
+                                    <th>เลขที่สั่งซื้อ</th>
                                     <th>วันที่สั่งซื้อ</th>
                                     <th>ลูกค้า</th>
                                     <th>ที่อยู่จัดส่ง</th>
-                                    <th>เบอร์โทร</th>
-                                    <th>จำนวน</th>
-                                    <th>ยอดรวม</th>
-                                    <th>สถานะ</th>
-                                    <th>จัดการ</th>
+                                    <th>รายการสินค้า</th>
+                                    <th class="text-end">ยอดรวม</th>
+                                    <th class="text-center">สถานะ</th>
+                                    <th class="text-center">จัดการ</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php while ($row = mysqli_fetch_assoc($result)): ?>
                                     <tr>
-                                        <td><?= str_pad($row['order_id'], 8, '0', STR_PAD_LEFT) ?></td>
-                                        <td><?= formatThaiDate($row['order_date']) ?></td>
-                                        <td><?= htmlspecialchars($row['name']) ?></td>
                                         <td>
-                                            <?= htmlspecialchars($row['address']) ?><br>
-                                            <?= htmlspecialchars($row['subdistrict']) ?>
-                                            <?= htmlspecialchars($row['district']) ?>
-                                            <?= htmlspecialchars($row['province']) ?>
-                                            <?= htmlspecialchars($row['zipcode']) ?>
+                                            <span class="fw-bold"><?= str_pad($row['order_id'], 8, '0', STR_PAD_LEFT) ?></span>
                                         </td>
-                                        <td><?= htmlspecialchars($row['phone']) ?></td>
-                                        <td><?= $row['total_items'] ?> รายการ</td>
-                                        <td>฿<?= number_format($row['total_amount'], 2) ?></td>
+                                        <td><?= formatThaiDate($row['order_date']) ?></td>
                                         <td>
+                                            <?= htmlspecialchars($row['name']) ?><br>
+                                            <small class="text-muted"><?= $row['phone'] ?></small>
+                                        </td>
+                                        <td>
+                                            <small>
+                                                <?= htmlspecialchars($row['address']) ?><br>
+                                                <?= htmlspecialchars($row['subdistrict']) ?>
+                                                <?= htmlspecialchars($row['district']) ?><br>
+                                                <?= htmlspecialchars($row['province']) ?>
+                                                <?= htmlspecialchars($row['zipcode']) ?>
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <small><?= htmlspecialchars($row['product_list']) ?></small>
+                                        </td>
+                                        <td class="text-end">
+                                            ฿<?= number_format($row['total_amount'], 2) ?>
+                                        </td>
+                                        <td class="text-center">
                                             <span class="badge bg-<?= getStatusColor($row['status']) ?>">
                                                 <?= $row['status'] ?>
                                             </span>
                                         </td>
-                                        <td>
-                                            <div class="dropdown">
-                                                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                    <i class="fas fa-cog"></i> จัดการ
+                                        <td class="text-center">
+                                            <div class="btn-group">
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-info" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#orderModal<?= $row['order_id'] ?>">
+                                                    <i class="fas fa-eye"></i>
                                                 </button>
-                                                <ul class="dropdown-menu">
-                                                    <li>
-                                                        <button type="button" class="dropdown-item" 
-                                                                data-bs-toggle="modal" 
-                                                                data-bs-target="#orderModal<?= $row['order_id'] ?>">
-                                                            <i class="fas fa-eye"></i> ดูรายละเอียด
-                                                        </button>
-                                                    </li>
-                                                    <li>
-                                                        <a href="print_order.php?order_id=<?= $row['order_id'] ?>" 
-                                                           class="dropdown-item" 
-                                                           target="_blank">
-                                                            <i class="fas fa-print"></i> พิมพ์ใบสั่งซื้อ
-                                                        </a>
-                                                    </li>
-                                                </ul>
+                                                <a href="print_order.php?order_id=<?= $row['order_id'] ?>" 
+                                                   class="btn btn-sm btn-success" 
+                                                   target="_blank">
+                                                    <i class="fas fa-print"></i>
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>
 
-                                    <!-- Modal แสดงรายละเอียดคำสั่งซื้อ -->
+                                    <!-- Modal แสดงรายละเอียด -->
                                     <div class="modal fade" id="orderModal<?= $row['order_id'] ?>" tabindex="-1">
                                         <div class="modal-dialog modal-lg">
                                             <div class="modal-content">
@@ -125,90 +129,29 @@ $result = mysqli_query($conn, $sql);
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    <!-- รายการสินค้า -->
-                                                    <h6 class="border-bottom pb-2">รายการสินค้า</h6>
-                                                    <div class="table-responsive">
-                                                        <table class="table">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>รูปภาพ</th>
-                                                                    <th>สินค้า</th>
-                                                                    <th class="text-center">ราคา</th>
-                                                                    <th class="text-center">จำนวน</th>
-                                                                    <th class="text-end">รวม</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <?php
-                                                                $detail_sql = "SELECT od.*, p.po_name, p.image 
-                                                                             FROM order_details od 
-                                                                             LEFT JOIN product p ON od.product_id = p.po_id 
-                                                                             WHERE od.order_id = ?";
-                                                                $stmt = $conn->prepare($detail_sql);
-                                                                $stmt->bind_param("i", $row['order_id']);
-                                                                $stmt->execute();
-                                                                $details = $stmt->get_result();
-                                                                while ($item = $details->fetch_assoc()):
-                                                                ?>
-                                                                    <tr>
-                                                                        <td>
-                                                                            <img src="img/<?= $item['image'] ?>" 
-                                                                                 alt="<?= htmlspecialchars($item['po_name']) ?>"
-                                                                                 class="img-thumbnail" style="width: 50px;">
-                                                                        </td>
-                                                                        <td><?= htmlspecialchars($item['po_name']) ?></td>
-                                                                        <td class="text-center">฿<?= number_format($item['price'], 2) ?></td>
-                                                                        <td class="text-center"><?= $item['quantity'] ?></td>
-                                                                        <td class="text-end">฿<?= number_format($item['total'], 2) ?></td>
-                                                                    </tr>
-                                                                <?php endwhile; ?>
-                                                            </tbody>
-                                                            <tfoot>
-                                                                <tr>
-                                                                    <td colspan="4" class="text-end">
-                                                                        <strong>รวมทั้งหมด</strong>
-                                                                    </td>
-                                                                    <td class="text-end">
-                                                                        <strong>฿<?= number_format($row['total_amount'], 2) ?></strong>
-                                                                    </td>
-                                                                </tr>
-                                                            </tfoot>
-                                                        </table>
-                                                    </div>
-
                                                     <!-- หลักฐานการโอนเงิน -->
-                                                    <div class="mt-4">
-                                                        <h6 class="border-bottom pb-2">หลักฐานการโอนเงิน</h6>
-                                                        <div class="text-center">
-                                                            <?php if (!empty($row['payment_slip'])): ?>
-                                                                <?php 
-                                                                $slip_path = "slips/" . $row['payment_slip'];
-                                                                if (file_exists($slip_path)): 
-                                                                ?>
-                                                                    <img src="<?= $slip_path ?>" 
-                                                                         alt="สลิปการโอนเงิน" 
-                                                                         class="img-fluid" style="max-height: 300px;">
-                                                                    <p class="mt-2 text-muted">
-                                                                        วันที่โอน: <?= formatThaiDate($row['payment_date']) ?>
-                                                                    </p>
-                                                                <?php else: ?>
-                                                                    <div class="alert alert-warning">
-                                                                        ไม่พบไฟล์รูปภาพ (<?= htmlspecialchars($row['payment_slip']) ?>)
-                                                                    </div>
-                                                                <?php endif; ?>
-                                                            <?php else: ?>
-                                                                <p class="text-muted">ไม่พบหลักฐานการโอนเงิน</p>
-                                                            <?php endif; ?>
+                                                    <?php if (!empty($row['payment_slip'])): ?>
+                                                        <div class="text-center mb-3">
+                                                            <img src="slips/<?= $row['payment_slip'] ?>" 
+                                                                 alt="สลิปการโอนเงิน" 
+                                                                 class="img-fluid" 
+                                                                 style="max-height: 300px;">
+                                                            <p class="text-muted mt-2">
+                                                                วันที่โอน: <?= formatThaiDate($row['payment_date']) ?>
+                                                            </p>
                                                         </div>
-                                                    </div>
+                                                    <?php endif; ?>
 
                                                     <!-- อัพเดทสถานะ -->
-                                                    <form action="" method="POST" class="mt-3">
+                                                    <form action="" method="POST">
                                                         <input type="hidden" name="order_id" value="<?= $row['order_id'] ?>">
                                                         <div class="row align-items-end">
                                                             <div class="col-md-8">
                                                                 <label class="form-label">สถานะคำสั่งซื้อ</label>
                                                                 <select name="status" class="form-select">
+                                                                    <option value="รอการชำระเงิน" <?= $row['status'] == 'รอการชำระเงิน' ? 'selected' : '' ?>>
+                                                                        รอการชำระเงิน
+                                                                    </option>
                                                                     <option value="รอตรวจสอบการชำระเงิน" <?= $row['status'] == 'รอตรวจสอบการชำระเงิน' ? 'selected' : '' ?>>
                                                                         รอตรวจสอบการชำระเงิน
                                                                     </option>
@@ -227,8 +170,11 @@ $result = mysqli_query($conn, $sql);
                                                                 </select>
                                                             </div>
                                                             <div class="col-md-4">
-                                                                <button type="submit" name="update_status" class="btn btn-primary w-100">
-                                                                    <i class="fas fa-save me-2"></i>บันทึกสถานะ
+                                                                <button type="submit" 
+                                                                        name="update_status" 
+                                                                        class="btn btn-primary w-100">
+                                                                    <i class="fas fa-save me-1"></i>
+                                                                    บันทึก
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -269,7 +215,7 @@ function getStatusColor($status) {
 // ฟังก์ชันแปลงวันที่เป็น พ.ศ.
 function formatThaiDate($date) {
     $timestamp = strtotime($date);
-    $year = date('Y', $timestamp) + 543;  // แปลงเป็น พ.ศ.
+    $year = date('Y', $timestamp) + 543;
     return date('d/m/', $timestamp) . $year . date(' H:i', $timestamp);
 }
 
