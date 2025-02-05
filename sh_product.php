@@ -66,6 +66,45 @@ $searchTerm = "%$search%";
 $stmt->bind_param("ss", $searchTerm, $searchTerm);
 $stmt->execute();
 $result = $stmt->get_result();
+
+// เพิ่มการจัดการค้นหาและกรอง
+$where_clause = "1=1";
+$params = array();
+$types = "";
+
+// ค้นหาตามคำค้น
+if (isset($_GET['search']) && !empty($_GET['search'])) {
+    $search = "%" . $_GET['search'] . "%";
+    $where_clause .= " AND (p.po_name LIKE ? OR t.type_name LIKE ?)";
+    $params[] = $search;
+    $params[] = $search;
+    $types .= "ss";
+}
+
+// กรองตามประเภท
+if (isset($_GET['type_id']) && !empty($_GET['type_id'])) {
+    $where_clause .= " AND p.type_id = ?";
+    $params[] = $_GET['type_id'];
+    $types .= "i";
+}
+
+// ดึงข้อมูลประเภทสินค้าสำหรับ dropdown
+$type_sql = "SELECT * FROM type ORDER BY type_name";
+$type_result = $conn->query($type_sql);
+
+// แก้ไข SQL query หลัก
+$sql = "SELECT p.*, t.type_name 
+        FROM product p 
+        LEFT JOIN type t ON p.type_id = t.type_id 
+        WHERE $where_clause AND p.amount > 0 
+        ORDER BY p.po_id DESC";
+
+$stmt = $conn->prepare($sql);
+if ($types && $params) {
+    $stmt->bind_param($types, ...$params);
+}
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
