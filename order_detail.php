@@ -19,9 +19,11 @@ $order_id = intval($_GET['order_id']);
 // ดึงข้อมูลคำสั่งซื้อและรายละเอียด
 $sql = "SELECT od.*, p.po_id, p.po_name, p.image, p.price,
         o.order_date, o.status, o.payment_date, o.payment_slip,
-        o.name, o.phone, o.address, o.subdistrict, o.district, o.province, o.zipcode
+        o.name, o.phone, o.address, o.subdistrict, o.district, o.province, o.zipcode,
+        IFNULL(t.type_name, 'ไม่ระบุประเภท') as type_name
         FROM order_details od
         JOIN product p ON od.product_id = p.po_id
+        LEFT JOIN type t ON p.type_id = t.type_id
         JOIN orders o ON od.order_id = o.order_id
         WHERE od.order_id = ?";
 
@@ -110,6 +112,7 @@ include 'header.php';
                             <th>รูปภาพ</th>
                             <th>รหัสสินค้า</th>
                             <th>สินค้า</th>
+                            <th>ประเภท</th>
                             <th class="text-end">ราคา</th>
                             <th class="text-center">จำนวน</th>
                             <th class="text-end">รวม</th>
@@ -132,6 +135,7 @@ include 'header.php';
                             </td>
                             <td><?= str_pad($item['po_id'], 5, '0', STR_PAD_LEFT) ?></td>
                             <td><?= htmlspecialchars($item['po_name']) ?></td>
+                            <td><?= htmlspecialchars($item['type_name']) ?></td>
                             <td class="text-end"><?= number_format($item['price'], 2) ?></td>
                             <td class="text-center"><?= $item['quantity'] ?></td>
                             <td class="text-end"><?= number_format($subtotal, 2) ?></td>
@@ -140,7 +144,7 @@ include 'header.php';
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="5" class="text-end"><strong>รวมทั้งหมด</strong></td>
+                            <td colspan="6" class="text-end"><strong>รวมทั้งหมด</strong></td>
                             <td class="text-end"><strong><?= number_format($total, 2) ?></strong></td>
                         </tr>
                     </tfoot>

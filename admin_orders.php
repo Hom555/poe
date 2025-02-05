@@ -32,7 +32,29 @@ if (isset($_POST['update_status'])) {
 $title = "จัดการคำสั่งซื้อ";
 include 'header.php';
 
-// ดึงข้อมูลคำสั่งซื้อ
+// เพิ่มการจัดการ filter
+$where_clause = "1=1"; // เริ่มต้นด้วยเงื่อนไขที่เป็นจริงเสมอ
+$params = array();
+$types = "";
+
+// ค้นหาตามคำค้น
+if (isset($_GET['search']) && !empty($_GET['search'])) {
+    $search = "%" . $_GET['search'] . "%";
+    $where_clause .= " AND (o.order_id LIKE ? OR o.name LIKE ? OR o.phone LIKE ?)";
+    $params[] = $search;
+    $params[] = $search;
+    $params[] = $search;
+    $types .= "sss";
+}
+
+// กรองตามสถานะ
+if (isset($_GET['status']) && !empty($_GET['status'])) {
+    $where_clause .= " AND o.status = ?";
+    $params[] = $_GET['status'];
+    $types .= "s";
+}
+
+// แก้ไข SQL query
 $sql = "SELECT o.*, u.username, COUNT(od.id) as total_items,
         (SELECT GROUP_CONCAT(CONCAT(p.po_name, ' (', od2.quantity, ')'))
          FROM order_details od2 
@@ -41,9 +63,16 @@ $sql = "SELECT o.*, u.username, COUNT(od.id) as total_items,
         FROM orders o 
         LEFT JOIN users u ON o.user_id = u.user_id 
         LEFT JOIN order_details od ON o.order_id = od.order_id 
+        WHERE $where_clause
         GROUP BY o.order_id 
         ORDER BY o.order_date DESC";
-$result = mysqli_query($conn, $sql);
+
+$stmt = $conn->prepare($sql);
+if ($types && $params) {
+    $stmt->bind_param($types, ...$params);
+}
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <div class="container-fluid py-4">
@@ -56,6 +85,47 @@ $result = mysqli_query($conn, $sql);
                     </h3>
                 </div>
                 <div class="card-body">
+                    <form method="GET" class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="text" name="search" class="form-control" 
+                                       placeholder="ค้นหาด้วยเลขที่สั่งซื้อ, ชื่อ หรือเบอร์โทร"
+                                       value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+                                <button class="btn btn-outline-secondary" type="submit">
+                                    <i class="fas fa-search"></i> ค้นหา
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <select name="status" class="form-select" onchange="this.form.submit()">
+                                <option value="">- ทุกสถานะ -</option>
+                                <option value="รอการชำระเงิน" <?= ($_GET['status'] ?? '') == 'รอการชำระเงิน' ? 'selected' : '' ?>>
+                                    รอการชำระเงิน
+                                </option>
+                                <option value="รอตรวจสอบการชำระเงิน" <?= ($_GET['status'] ?? '') == 'รอตรวจสอบการชำระเงิน' ? 'selected' : '' ?>>
+                                    รอตรวจสอบการชำระเงิน
+                                </option>
+                                <option value="ชำระเงินแล้ว" <?= ($_GET['status'] ?? '') == 'ชำระเงินแล้ว' ? 'selected' : '' ?>>
+                                    ชำระเงินแล้ว
+                                </option>
+                                <option value="กำลังจัดส่ง" <?= ($_GET['status'] ?? '') == 'กำลังจัดส่ง' ? 'selected' : '' ?>>
+                                    กำลังจัดส่ง
+                                </option>
+                                <option value="จัดส่งแล้ว" <?= ($_GET['status'] ?? '') == 'จัดส่งแล้ว' ? 'selected' : '' ?>>
+                                    จัดส่งแล้ว
+                                </option>
+                                <option value="ยกเลิก" <?= ($_GET['status'] ?? '') == 'ยกเลิก' ? 'selected' : '' ?>>
+                                    ยกเลิก
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="admin_orders.php" class="btn btn-secondary w-100">
+                                <i class="fas fa-redo"></i> รีเซ็ต
+                            </a>
+                        </div>
+                    </form>
+
                     <div class="table-responsive">
                         <table class="table table-hover table-striped">
                             <thead class="table-light">
