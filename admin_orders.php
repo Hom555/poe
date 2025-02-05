@@ -103,14 +103,12 @@ $result = mysqli_query($conn, $sql);
                                         </td>
                                         <td class="text-center">
                                             <div class="btn-group">
-                                                <button type="button" 
-                                                        class="btn btn-sm btn-info" 
-                                                        data-bs-toggle="modal" 
-                                                        data-bs-target="#orderModal<?= $row['order_id'] ?>">
+                                                <a href="order_detail.php?order_id=<?= $row['order_id'] ?>" 
+                                                   class="btn btn-sm btn-info">
                                                     <i class="fas fa-eye"></i>
-                                                </button>
+                                                </a>
                                                 <a href="print_order.php?order_id=<?= $row['order_id'] ?>" 
-                                                   class="btn btn-sm btn-success" 
+                                                   class="btn btn-sm btn-success"
                                                    target="_blank">
                                                     <i class="fas fa-print"></i>
                                                 </a>
