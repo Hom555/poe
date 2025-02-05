@@ -23,47 +23,42 @@ try {
             LEFT JOIN users u ON o.user_id = u.user_id 
             WHERE o.order_id = ?";
     $stmt = $conn->prepare($sql);
-    
     if ($stmt === false) {
         throw new Exception("เกิดข้อผิดพลาดในการเตรียมคำสั่ง SQL: " . $conn->error);
     }
-    
     $stmt->bind_param("i", $order_id);
     $stmt->execute();
     $result = $stmt->get_result();
     $order = $result->fetch_assoc();
 
-    // ถ้าไม่พบข้อมูล
     if (!$order) {
-        echo "<script>
-            alert('ไม่พบข้อมูลคำสั่งซื้อ');
-            window.location.href = 'admin_orders.php';
-        </script>";
-        exit();
+        throw new Exception("ไม่พบข้อมูลคำสั่งซื้อ");
     }
 
     // ดึงรายการสินค้า
-    $sql = "SELECT od.quantity, p.po_name as name, p.price 
+    $sql = "SELECT od.quantity, od.price, p.po_name, p.po_id, 
+            IFNULL(t.type_name, 'ไม่ระบุประเภท') as type_name 
             FROM order_details od 
-            INNER JOIN product p ON od.product_id = p.po_id 
+            JOIN product p ON od.product_id = p.po_id 
+            LEFT JOIN type t ON p.type_id = t.type_id 
             WHERE od.order_id = ?";
     $stmt = $conn->prepare($sql);
-    
     if ($stmt === false) {
         throw new Exception("เกิดข้อผิดพลาดในการเตรียมคำสั่ง SQL: " . $conn->error);
     }
-    
     $stmt->bind_param("i", $order_id);
     $stmt->execute();
     $items = $stmt->get_result();
 
     if (!$items) {
-        throw new Exception("เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า: " . $conn->error);
+        throw new Exception("เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า");
     }
 
 } catch (Exception $e) {
-    // แสดงข้อผิดพลาด
-    echo "เกิดข้อผิดพลาด: " . $e->getMessage();
+    echo "<script>
+        alert('เกิดข้อผิดพลาด: " . $e->getMessage() . "');
+        window.location.href = 'admin_orders.php';
+    </script>";
     exit();
 }
 ?>
@@ -138,10 +133,12 @@ try {
             <thead>
                 <tr>
                     <th width="5%">ลำดับ</th>
-                    <th width="45%">รายการ</th>
-                    <th width="15%" class="text-end">ราคา/หน่วย</th>
-                    <th width="15%" class="text-center">จำนวน</th>
-                    <th width="20%" class="text-end">รวม</th>
+                    <th width="15%">รหัสสินค้า</th>
+                    <th width="30%">รายการ</th>
+                    <th width="15%">ประเภท</th>
+                    <th width="10%" class="text-end">ราคา/หน่วย</th>
+                    <th width="10%" class="text-center">จำนวน</th>
+                    <th width="15%" class="text-end">รวม</th>
                 </tr>
             </thead>
             <tbody>
@@ -154,7 +151,9 @@ try {
                 ?>
                 <tr>
                     <td><?= $i++ ?></td>
-                    <td><?= htmlspecialchars($item['name']) ?></td>
+                    <td><?= str_pad($item['po_id'], 5, '0', STR_PAD_LEFT) ?></td>
+                    <td><?= htmlspecialchars($item['po_name']) ?></td>
+                    <td><?= htmlspecialchars($item['type_name']) ?></td>
                     <td class="text-end"><?= number_format($item['price'], 2) ?></td>
                     <td class="text-center"><?= $item['quantity'] ?></td>
                     <td class="text-end"><?= number_format($subtotal, 2) ?></td>
@@ -163,7 +162,7 @@ try {
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="4" class="text-end"><strong>รวมทั้งสิ้น</strong></td>
+                    <td colspan="6" class="text-end"><strong>รวมทั้งสิ้น</strong></td>
                     <td class="text-end"><strong><?= number_format($total, 2) ?></strong></td>
                 </tr>
             </tfoot>
