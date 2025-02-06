@@ -252,13 +252,27 @@ $result = $stmt->get_result();
             display: flex;
             align-items: center;
         }
+        .navbar-brand img {
+            transition: transform 0.2s;
+        }
+        .navbar-brand:hover img {
+            transform: scale(1.05);
+        }
+        .navbar-brand span {
+            color: #0d6efd;
+            font-size: 1.4rem;
+        }
     </style>
 </head>
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container">
-            <a class="navbar-brand" href="#">ร้านค้า</a>
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <img src="img/logo.png" alt="" 
+                     style="height: 40px; margin-right: 10px;">
+                <span class="fw-bold">Yaz Shop</span>
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
