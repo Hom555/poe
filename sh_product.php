@@ -18,7 +18,23 @@ $result = mysqli_query($conn, $sql);
 // เพิ่มสินค้าลงตะกร้า
 if (isset($_GET['id'])) {
     $po_id = $_GET['id'];
-    $search = $_GET['search'] ?? '';  // เก็บค่าการค้นหา
+    $quantity = isset($_GET['quantity']) ? intval($_GET['quantity']) : 1; // รับค่าจำนวนสินค้า
+    $search = $_GET['search'] ?? '';
+    
+    // ตรวจสอบจำนวนสินค้าในสต็อก
+    $stock_check = $conn->prepare("SELECT amount FROM product WHERE po_id = ?");
+    $stock_check->bind_param("i", $po_id);
+    $stock_check->execute();
+    $stock_result = $stock_check->get_result();
+    $stock_data = $stock_result->fetch_assoc();
+    
+    if ($quantity > $stock_data['amount']) {
+        echo "<script>
+            alert('จำนวนสินค้าไม่เพียงพอ มีสินค้าในสต็อก " . $stock_data['amount'] . " ชิ้น');
+            window.location.href = 'sh_product.php" . ($search ? "?search=" . urlencode($search) : "") . "';
+        </script>";
+        exit();
+    }
     
     // ตรวจสอบว่ามีตะกร้าสินค้าหรือยัง
     if (!isset($_SESSION["strProductID"])) {
@@ -28,7 +44,7 @@ if (isset($_GET['id'])) {
     
     // เพิ่มสินค้าลงตะกร้า
     array_push($_SESSION["strProductID"], $po_id);
-    array_push($_SESSION["strQty"], 1);
+    array_push($_SESSION["strQty"], $quantity);
     
     echo "<script>
         alert('เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว');
@@ -194,6 +210,48 @@ $result = $stmt->get_result();
             font-size: 0.9rem;
             padding: 0.375rem 0.75rem;
         }
+        input[type="number"] {
+            -webkit-appearance: textfield;
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+        }
+        .input-group .form-control {
+            border-left: 0;
+            border-right: 0;
+        }
+        .input-group .btn {
+            z-index: 0;
+        }
+        .quantity-control {
+            width: 100px !important;
+            margin-right: 5px;
+        }
+        .quantity-control .btn {
+            padding: 2px 8px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .quantity-control .form-control {
+            padding: 2px;
+            font-size: 14px;
+            width: 40px;
+            text-align: center;
+        }
+        .add-to-cart {
+            padding: 4px 12px;
+            font-size: 14px;
+        }
+        .input-group .btn:hover {
+            background-color: #e9ecef;
+        }
+        .card-footer form {
+            display: flex;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -207,7 +265,10 @@ $result = $stmt->get_result();
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="sh_product.php">สินค้า</a>
+                        <a class="nav-link" href="sh_product.php">สินค้า</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="contact.php">ติดต่อเรา</a>
                     </li>
                 </ul>
                 
@@ -353,10 +414,24 @@ $result = $stmt->get_result();
                         </div>
                         <div class="card-footer bg-transparent border-top-0 p-2">
                             <?php if($row['amount'] > 0): ?>
-                                <a href="?id=<?= $row['po_id'] ?><?= isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : '' ?>" 
-                                   class="btn btn-primary btn-sm w-100">
-                                    <i class="fas fa-cart-plus"></i> เพิ่มลงตะกร้า
-                                </a>
+                                <form action="" method="GET" class="d-flex gap-1">
+                                    <input type="hidden" name="id" value="<?= $row['po_id'] ?>">
+                                    <?php if(isset($_GET['search'])): ?>
+                                        <input type="hidden" name="search" value="<?= htmlspecialchars($_GET['search']) ?>">
+                                    <?php endif; ?>
+                                    <div class="input-group input-group-sm quantity-control">
+                                        <button type="button" class="btn btn-outline-secondary" 
+                                                onclick="decrementQty(this)">-</button>
+                                        <input type="number" name="quantity" class="form-control text-center px-0" 
+                                               value="1" min="1" max="<?= min($row['amount'], 10) ?>" 
+                                               onchange="validateQty(this, <?= min($row['amount'], 10) ?>)">
+                                        <button type="button" class="btn btn-outline-secondary" 
+                                                onclick="incrementQty(this, <?= min($row['amount'], 10) ?>)">+</button>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-sm add-to-cart">
+                                        <i class="fas fa-cart-plus"></i>
+                                    </button>
+                                </form>
                             <?php else: ?>
                                 <button class="btn btn-secondary btn-sm w-100" disabled>
                                     <i class="fas fa-times"></i> สินค้าหมด
@@ -370,6 +445,32 @@ $result = $stmt->get_result();
     </div>
 
     <script src="bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+    function decrementQty(btn) {
+        const input = btn.parentNode.querySelector('input');
+        const currentValue = parseInt(input.value);
+        if (currentValue > 1) {
+            input.value = currentValue - 1;
+        }
+    }
+
+    function incrementQty(btn, max) {
+        const input = btn.parentNode.querySelector('input');
+        const currentValue = parseInt(input.value);
+        if (currentValue < max) {
+            input.value = currentValue + 1;
+        }
+    }
+
+    function validateQty(input, max) {
+        let value = parseInt(input.value);
+        if (isNaN(value) || value < 1) {
+            input.value = 1;
+        } else if (value > max) {
+            input.value = max;
+        }
+    }
+    </script>
 </body>
 </html>
 <?php mysqli_close($conn); ?>
