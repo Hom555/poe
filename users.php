@@ -109,21 +109,25 @@ $result = $stmt->get_result();
                                 </td>
                                 <td><?= date('d/m/Y H:i', strtotime($row['created_at'])) ?></td>
                                 <td>
-                                    <div class="btn-group btn-group-sm">
+                                    <div class="btn-group">
                                         <a href="edit_user.php?id=<?= $row['user_id'] ?>" 
-                                           class="btn btn-warning">
-                                            แก้ไข
+                                           class="btn btn-warning btn-sm">
+                                            <i class="fas fa-edit"></i> แก้ไข
                                         </a>
                                         <?php if ($row['user_id'] != $_SESSION['user_id']): ?>
                                             <button type="button" 
-                                                    class="btn btn-danger"
+                                                    class="btn btn-danger btn-sm"
                                                     onclick="deleteUser(<?= $row['user_id'] ?>)">
-                                                ลบ
+                                                <i class="fas fa-trash"></i> ลบ
                                             </button>
                                             <button type="button" 
-                                                    class="btn <?= $row['status'] == 1 ? 'btn-secondary' : 'btn-primary' ?>"
+                                                    class="btn <?= $row['status'] == 1 ? 'btn-secondary' : 'btn-success' ?> btn-sm"
                                                     onclick="changeStatus(<?= $row['user_id'] ?>, <?= $row['status'] ?>)">
-                                                <?= $row['status'] == 1 ? 'ลดสิทธิ์' : 'เพิ่มสิทธิ์' ?>
+                                                <?php if ($row['status'] == 1): ?>
+                                                    <i class="fas fa-arrow-down"></i> ลดสิทธิ์
+                                                <?php else: ?>
+                                                    <i class="fas fa-arrow-up"></i> เพิ่มสิทธิ์
+                                                <?php endif; ?>
                                             </button>
                                         <?php endif; ?>
                                     </div>
@@ -196,5 +200,39 @@ function changeStatus(userId, currentStatus) {
     }
 }
 </script>
+
+<style>
+.btn-group .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.btn-group .btn i {
+    margin-right: 3px;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* ทำให้ปุ่มติดกันสวยงาม */
+.btn-group > .btn:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.btn-group > .btn:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: -1px;
+}
+
+/* ปรับขนาดตารางให้เหมาะสม */
+.table th:last-child,
+.table td:last-child {
+    min-width: 200px;
+    width: auto;
+}
+</style>
 
 <?php include 'footer.php'; ?> 
