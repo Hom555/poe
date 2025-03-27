@@ -4,6 +4,18 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 include 'condb.php';
+
+// ดึงข้อมูลผู้ใช้
+$user_name = 'ผู้ใช้งาน';
+if(isset($_SESSION['user_id'])) {
+    $user_id = $_SESSION['user_id'];
+    $sql = "SELECT name FROM users WHERE user_id = '$user_id'";
+    $result = mysqli_query($conn, $sql);
+    if($result && mysqli_num_rows($result) > 0) {
+        $row = mysqli_fetch_assoc($result);
+        $user_name = $row['name'];
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -151,14 +163,20 @@ include 'condb.php';
                 <!-- User Menu -->
                 <div class="dropdown">
                     <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-user"></i> admin
+                        <i class="fas fa-user"></i> <?php echo $user_name; ?>
                     </button>
-                   
-                        
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="profile.php">
+                                <i class="fas fa-user-circle"></i> ข้อมูลส่วนตัว
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
                             <a class="dropdown-item text-danger" href="logout.php">
                                 <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
                             </a>
-                        
+                        </li>
                     </ul>
                 </div>
             </nav>
