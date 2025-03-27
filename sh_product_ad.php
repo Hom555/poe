@@ -84,7 +84,7 @@ $result = $stmt->get_result();
                                 <tr>
                                     <td><?= str_pad($row['po_id'], 5, '0', STR_PAD_LEFT) ?></td>
                                     <td>
-                                        <img src="image/<?= $row['image'] ?>" 
+                                        <img src="img/<?= $row['image'] ?>" 
                                              alt="<?= htmlspecialchars($row['po_name']) ?>"
                                              class="img-thumbnail"
                                              style="width: 50px; height: 50px; object-fit: cover;">

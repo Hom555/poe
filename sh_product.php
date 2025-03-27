@@ -131,183 +131,6 @@ $result = $stmt->get_result();
     <title>สินค้าทั้งหมด</title>
     <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <style>
-        .dropdown-menu {
-            border: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .dropdown-item {
-            padding: 8px 20px;
-        }
-        .dropdown-item i {
-            width: 20px;
-            margin-right: 10px;
-        }
-        .card {
-            transition: transform 0.2s;
-            margin-bottom: 20px;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        .card-img-top {
-            height: 150px;
-            object-fit: cover;
-        }
-        .product-grid {
-            padding: 20px;
-        }
-        .cart-icon {
-            position: relative;
-            cursor: pointer;
-        }
-        .cart-count {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background-color: #dc3545;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 12px;
-        }
-        .cart-dropdown {
-            min-width: 300px;
-            padding: 15px;
-        }
-        .cart-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-        .cart-item img {
-            width: 50px;
-            height: 50px;
-            object-fit: cover;
-            margin-right: 10px;
-        }
-        .cart-item-details {
-            flex-grow: 1;
-        }
-        .cart-item-price {
-            color: #dc3545;
-            font-weight: bold;
-        }
-        .card-title {
-            font-size: 1rem;
-            margin-bottom: 0.5rem;
-        }
-        .card-body {
-            padding: 0.75rem;
-        }
-        .card-text {
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
-        .btn {
-            font-size: 0.9rem;
-            padding: 0.375rem 0.75rem;
-        }
-        input[type="number"] {
-            -webkit-appearance: textfield;
-            -moz-appearance: textfield;
-            appearance: textfield;
-        }
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-        }
-        .input-group .form-control {
-            border-left: 0;
-            border-right: 0;
-        }
-        .input-group .btn {
-            z-index: 0;
-        }
-        .quantity-control {
-            width: 100px !important;
-            margin-right: 5px;
-        }
-        .quantity-control .btn {
-            padding: 2px 8px;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        .quantity-control .form-control {
-            padding: 2px;
-            font-size: 14px;
-            width: 40px;
-            text-align: center;
-        }
-        .add-to-cart {
-            padding: 4px 12px;
-            font-size: 14px;
-        }
-        .input-group .btn:hover {
-            background-color: #e9ecef;
-        }
-        .card-footer form {
-            display: flex;
-            align-items: center;
-        }
-        .navbar-brand img {
-            transition: transform 0.2s;
-        }
-        .navbar-brand:hover img {
-            transform: scale(1.05);
-        }
-        .navbar-brand span {
-            color: #0d6efd;
-            font-size: 1.4rem;
-        }
-        .description {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            font-size: 0.9rem;
-            color: #666;
-        }
-        .sold-out-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(220, 53, 69, 0.9);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 3px;
-            font-size: 0.8rem;
-        }
-        .modal-body img {
-            max-height: 300px;
-            object-fit: cover;
-        }
-        .form-select {
-            min-width: 150px;
-        }
-        .alert {
-            margin-top: 1rem;
-            padding: 0.75rem 1.25rem;
-        }
-        select.form-select {
-            background-color: #fff;
-            border: 1px solid #ced4da;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        select.form-select:hover {
-            border-color: #86b7fe;
-        }
-        .btn-outline-secondary {
-            border-color: #ced4da;
-        }
-        .btn-outline-secondary:hover {
-            background-color: #f8f9fa;
-            border-color: #86b7fe;
-        }
-    </style>
 </head>
 <body>
     <!-- Navbar -->
@@ -495,6 +318,13 @@ $result = $stmt->get_result();
                                 <span class="text-danger fw-bold">฿<?= number_format($row['price'], 2) ?></span>
                             </div>
 
+                            <!-- เพิ่มการแสดงจำนวนสินค้า -->
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge <?= $row['amount'] > 0 ? 'bg-success' : 'bg-danger' ?>">
+                                    <?= $row['amount'] > 0 ? 'มีสินค้า ' . $row['amount'] . ' ชิ้น' : 'สินค้าหมด' ?>
+                                </span>
+                            </div>
+
                             <!-- ปุ่มดูรายละเอียด -->
                             <?php if (!empty($row['detail'])): ?>
                                 <button type="button" 
@@ -599,5 +429,182 @@ $result = $stmt->get_result();
     </script>
 </body>
 </html>
+<style>
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .dropdown-item {
+            padding: 8px 20px;
+        }
+        .dropdown-item i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .card {
+            transition: transform 0.2s;
+            margin-bottom: 20px;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card-img-top {
+            height: 150px;
+            object-fit: cover;
+        }
+        .product-grid {
+            padding: 20px;
+        }
+        .cart-icon {
+            position: relative;
+            cursor: pointer;
+        }
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+        }
+        .cart-dropdown {
+            min-width: 300px;
+            padding: 15px;
+        }
+        .cart-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .cart-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+        .cart-item-details {
+            flex-grow: 1;
+        }
+        .cart-item-price {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .card-title {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .card-body {
+            padding: 0.75rem;
+        }
+        .card-text {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        .btn {
+            font-size: 0.9rem;
+            padding: 0.375rem 0.75rem;
+        }
+        input[type="number"] {
+            -webkit-appearance: textfield;
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+        }
+        .input-group .form-control {
+            border-left: 0;
+            border-right: 0;
+        }
+        .input-group .btn {
+            z-index: 0;
+        }
+        .quantity-control {
+            width: 100px !important;
+            margin-right: 5px;
+        }
+        .quantity-control .btn {
+            padding: 2px 8px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .quantity-control .form-control {
+            padding: 2px;
+            font-size: 14px;
+            width: 40px;
+            text-align: center;
+        }
+        .add-to-cart {
+            padding: 4px 12px;
+            font-size: 14px;
+        }
+        .input-group .btn:hover {
+            background-color: #e9ecef;
+        }
+        .card-footer form {
+            display: flex;
+            align-items: center;
+        }
+        .navbar-brand img {
+            transition: transform 0.2s;
+        }
+        .navbar-brand:hover img {
+            transform: scale(1.05);
+        }
+        .navbar-brand span {
+            color: #0d6efd;
+            font-size: 1.4rem;
+        }
+        .description {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .sold-out-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+        }
+        .modal-body img {
+            max-height: 300px;
+            object-fit: cover;
+        }
+        .form-select {
+            min-width: 150px;
+        }
+        .alert {
+            margin-top: 1rem;
+            padding: 0.75rem 1.25rem;
+        }
+        select.form-select {
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        select.form-select:hover {
+            border-color: #86b7fe;
+        }
+        .btn-outline-secondary {
+            border-color: #ced4da;
+        }
+        .btn-outline-secondary:hover {
+            background-color: #f8f9fa;
+            border-color: #86b7fe;
+        }
+    </style>
 <?php mysqli_close($conn); ?>
 
