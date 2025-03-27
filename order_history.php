@@ -56,65 +56,161 @@ function formatThaiDate($date) {
     <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <style>
-        .order-status {
-            font-size: 0.9rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
+        body {
+            background-color: #f8f9fa;
         }
-        .status-warning { background-color: #ffeeba; color: #856404; }
-        .status-info { background-color: #b8daff; color: #004085; }
-        .status-primary { background-color: #c3e6cb; color: #155724; }
-        .status-success { background-color: #d4edda; color: #155724; }
-        .status-danger { background-color: #f5c6cb; color: #721c24; }
-        .status-secondary { background-color: #e2e3e5; color: #383d41; }
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0,0,0,.08);
+        }
+        .order-status {
+            font-size: 0.85rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .status-warning { 
+            background-color: #fff3cd; 
+            color: #856404; 
+            border: 1px solid #ffeeba;
+        }
+        .status-info { 
+            background-color: #cce5ff; 
+            color: #004085; 
+            border: 1px solid #b8daff;
+        }
+        .status-primary { 
+            background-color: #d4edda; 
+            color: #155724; 
+            border: 1px solid #c3e6cb;
+        }
+        .status-success { 
+            background-color: #d4edda; 
+            color: #155724; 
+            border: 1px solid #c3e6cb;
+        }
+        .status-danger { 
+            background-color: #f8d7da; 
+            color: #721c24; 
+            border: 1px solid #f5c6cb;
+        }
+        .status-secondary { 
+            background-color: #e2e3e5; 
+            color: #383d41; 
+            border: 1px solid #d6d8db;
+        }
+        .accordion-item {
+            border: none;
+            background: white;
+            border-radius: 10px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,.05);
+            margin-bottom: 1rem;
+        }
+        .accordion-button {
+            border-radius: 10px !important;
+            background: white;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: #f8f9fa;
+            color: #0d6efd;
+        }
+        .table {
+            margin-bottom: 0;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .product-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,.05);
+            border-radius: 10px;
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            padding: 1rem;
+            font-weight: 600;
+        }
+        .payment-slip {
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        }
+        .badge {
+            padding: 0.5em 0.8em;
+            border-radius: 6px;
+        }
+        .order-total {
+            font-size: 1.1rem;
+            color: #0d6efd;
+        }
+        .shipping-info {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
     </style>
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white">
         <div class="container">
-            <a class="navbar-brand" href="#">ร้านค้า</a>
+            <a class="navbar-brand fw-bold" href="#">ร้านค้า</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="sh_product.php">หน้าร้านค้า</a>
+                        <a class="nav-link" href="sh_product.php">
+                            <i class="fas fa-store me-1"></i>หน้าร้านค้า
+                        </a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <h2 class="mb-4">ประวัติการสั่งซื้อ</h2>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">
+                <i class="fas fa-history me-2 text-primary"></i>ประวัติการสั่งซื้อ
+            </h2>
+        </div>
 
         <?php if ($orders->num_rows > 0): ?>
             <div class="accordion" id="orderAccordion">
                 <?php while ($order = $orders->fetch_assoc()): ?>
-                    <div class="accordion-item mb-3">
+                    <div class="accordion-item">
                         <h2 class="accordion-header">
                             <button class="accordion-button collapsed" type="button" 
                                     data-bs-toggle="collapse" 
                                     data-bs-target="#order<?= $order['order_id'] ?>">
                                 <div class="d-flex justify-content-between align-items-center w-100 me-3">
                                     <div>
-                                        <strong>คำสั่งซื้อ #<?= str_pad($order['order_id'], 8, '0', STR_PAD_LEFT) ?></strong>
-                                        <span class="ms-3 text-muted">
+                                        <strong class="fs-5">คำสั่งซื้อ #<?= str_pad($order['order_id'], 8, '0', STR_PAD_LEFT) ?></strong>
+                                        <div class="text-muted mt-1">
+                                            <i class="far fa-calendar-alt me-1"></i>
                                             <?= formatThaiDate($order['order_date']) ?>
-                                        </span>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <span class="order-status status-<?= getStatusColor($order['status']) ?>">
-                                            <?= $order['status'] ?>
-                                        </span>
-                                        <span class="ms-3">
-                                            ฿<?= number_format($order['total_amount'], 2) ?>
-                                        </span>
-                                        <span class="badge bg-secondary ms-2">
-                                            <?= $order['total_items'] ?> รายการ
-                                        </span>
+                                    <div class="text-end">
+                                        <div class="order-status status-<?= getStatusColor($order['status']) ?>">
+                                            <i class="fas fa-circle me-1" style="font-size: 8px;"></i><?= $order['status'] ?>
+                                        </div>
+                                        <div class="mt-2">
+                                            <span class="order-total">฿<?= number_format($order['total_amount'], 2) ?></span>
+                                            <span class="badge bg-secondary ms-2">
+                                                <i class="fas fa-box me-1"></i><?= $order['total_items'] ?> รายการ
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </button>
@@ -124,7 +220,7 @@ function formatThaiDate($date) {
                             <div class="accordion-body">
                                 <!-- รายละเอียดสินค้า -->
                                 <div class="table-responsive mb-3">
-                                    <table class="table table-bordered table-striped">
+                                    <table class="table">
                                         <thead>
                                             <tr>
                                                 <th>สินค้า</th>
@@ -150,16 +246,23 @@ function formatThaiDate($date) {
                                                     <td>
                                                         <div class="d-flex align-items-center">
                                                             <img src="img/<?= $item['image'] ?>" 
-                                                                 class="img-thumbnail me-2" 
-                                                                 style="width: 50px; height: 50px; object-fit: cover;">
-                                                            <?= $item['po_name'] ?>
+                                                                 class="product-image me-3"
+                                                                 alt="<?= $item['po_name'] ?>">
+                                                            <div>
+                                                                <div class="fw-bold"><?= $item['po_name'] ?></div>
+                                                                <small class="text-muted">รหัสสินค้า: <?= $item['product_id'] ?></small>
+                                                            </div>
                                                         </div>
                                                     </td>
-                                                    <td class="text-center">
+                                                    <td class="text-center align-middle">
                                                         ฿<?= number_format($item['price'], 2) ?>
                                                     </td>
-                                                    <td class="text-center"><?= $item['quantity'] ?></td>
-                                                    <td class="text-end">
+                                                    <td class="text-center align-middle">
+                                                        <span class="badge bg-light text-dark">
+                                                            <?= $item['quantity'] ?>
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-end align-middle fw-bold">
                                                         ฿<?= number_format($item['total'], 2) ?>
                                                     </td>
                                                 </tr>
@@ -171,7 +274,7 @@ function formatThaiDate($date) {
                                                     <strong>รวมทั้งหมด</strong>
                                                 </td>
                                                 <td class="text-end">
-                                                    <strong>฿<?= number_format($order['total_amount'], 2) ?></strong>
+                                                    <strong class="text-primary fs-5">฿<?= number_format($order['total_amount'], 2) ?></strong>
                                                 </td>
                                             </tr>
                                         </tfoot>
@@ -179,36 +282,58 @@ function formatThaiDate($date) {
                                 </div>
 
                                 <!-- ข้อมูลการจัดส่ง -->
-                                <div class="card">
+                                <div class="card mt-4">
                                     <div class="card-header">
-                                        <i class="fas fa-shipping-fast me-2"></i>ข้อมูลการจัดส่ง
+                                        <i class="fas fa-shipping-fast me-2 text-primary"></i>ข้อมูลการจัดส่ง
                                     </div>
                                     <div class="card-body">
-                                        <p class="mb-1"><strong>ชื่อผู้รับ:</strong> <?= $order['name'] ?></p>
-                                        <p class="mb-1"><strong>ที่อยู่:</strong> <?= $order['address'] ?></p>
-                                        <p class="mb-1">
-                                            <?= $order['subdistrict'] ?> 
-                                            <?= $order['district'] ?> 
-                                            <?= $order['province'] ?> 
-                                            <?= $order['zipcode'] ?>
-                                        </p>
-                                        <p class="mb-0"><strong>เบอร์โทร:</strong> <?= $order['phone'] ?></p>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p class="mb-2">
+                                                    <i class="fas fa-user me-2 text-muted"></i>
+                                                    <strong>ชื่อผู้รับ:</strong> <?= $order['name'] ?>
+                                                </p>
+                                                <p class="mb-2">
+                                                    <i class="fas fa-phone me-2 text-muted"></i>
+                                                    <strong>เบอร์โทร:</strong> <?= $order['phone'] ?>
+                                                </p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p class="mb-2">
+                                                    <i class="fas fa-map-marker-alt me-2 text-muted"></i>
+                                                    <strong>ที่อยู่:</strong>
+                                                </p>
+                                                <p class="mb-0 ps-4">
+                                                    <?= $order['address'] ?><br>
+                                                    <?= $order['subdistrict'] ?> 
+                                                    <?= $order['district'] ?><br>
+                                                    <?= $order['province'] ?> 
+                                                    <?= $order['zipcode'] ?>
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- แก้ไขส่วนแสดงวันที่โอน -->
-                                <div class="mt-4">
-                                    <h6 class="border-bottom pb-2">หลักฐานการโอนเงิน</h6>
-                                    <div class="text-center">
+                                <!-- หลักฐานการโอนเงิน -->
+                                <div class="card mt-4">
+                                    <div class="card-header">
+                                        <i class="fas fa-receipt me-2 text-primary"></i>หลักฐานการโอนเงิน
+                                    </div>
+                                    <div class="card-body text-center">
                                         <?php if (!empty($order['payment_slip'])): ?>
                                             <img src="slips/<?= $order['payment_slip'] ?>" 
                                                  alt="สลิปการโอนเงิน" 
-                                                 class="img-fluid" style="max-height: 300px;">
-                                            <p class="mt-2 text-muted">
+                                                 class="payment-slip">
+                                            <p class="mt-3 text-muted">
+                                                <i class="far fa-clock me-1"></i>
                                                 วันที่โอน: <?= formatThaiDate($order['payment_date']) ?>
                                             </p>
                                         <?php else: ?>
-                                            <p class="text-muted">ไม่พบหลักฐานการโอนเงิน</p>
+                                            <div class="text-muted py-4">
+                                                <i class="fas fa-receipt fa-3x mb-3"></i>
+                                                <p class="mb-0">ไม่พบหลักฐานการโอนเงิน</p>
+                                            </div>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -218,8 +343,12 @@ function formatThaiDate($date) {
                 <?php endwhile; ?>
             </div>
         <?php else: ?>
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>ยังไม่มีประวัติการสั่งซื้อ
+            <div class="alert alert-info d-flex align-items-center">
+                <i class="fas fa-info-circle fa-lg me-3"></i>
+                <div>
+                    ยังไม่มีประวัติการสั่งซื้อ
+                    <a href="sh_product.php" class="alert-link ms-2">เริ่มช้อปปิ้งเลย!</a>
+                </div>
             </div>
         <?php endif; ?>
     </div>

@@ -84,7 +84,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 // เพิ่มการจัดการค้นหาและกรอง
-$where_clause = "1=1";
+$where_clause = "p.amount > 0"; // แสดงเฉพาะสินค้าที่มีในสต็อก
 $params = array();
 $types = "";
 
@@ -112,11 +112,11 @@ $type_result = $conn->query($type_sql);
 $sql = "SELECT p.*, t.type_name 
         FROM product p 
         LEFT JOIN type t ON p.type_id = t.type_id 
-        WHERE $where_clause AND p.amount > 0 
+        WHERE $where_clause 
         ORDER BY p.po_id DESC";
 
 $stmt = $conn->prepare($sql);
-if ($types && $params) {
+if (!empty($params)) {
     $stmt->bind_param($types, ...$params);
 }
 $stmt->execute();
@@ -262,6 +262,51 @@ $result = $stmt->get_result();
             color: #0d6efd;
             font-size: 1.4rem;
         }
+        .description {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .sold-out-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+        }
+        .modal-body img {
+            max-height: 300px;
+            object-fit: cover;
+        }
+        .form-select {
+            min-width: 150px;
+        }
+        .alert {
+            margin-top: 1rem;
+            padding: 0.75rem 1.25rem;
+        }
+        select.form-select {
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        select.form-select:hover {
+            border-color: #86b7fe;
+        }
+        .btn-outline-secondary {
+            border-color: #ced4da;
+        }
+        .btn-outline-secondary:hover {
+            background-color: #f8f9fa;
+            border-color: #86b7fe;
+        }
     </style>
 </head>
 <body>
@@ -368,20 +413,41 @@ $result = $stmt->get_result();
         </div>
     </nav>
 
-    <!-- แก้ไขส่วนฟอร์มค้นหา -->
+    <!-- แก้ไขส่วนฟอร์มค้นหาและตัวกรอง -->
     <div class="container mt-3">
         <div class="row mb-3">
-            <div class="col-md-4">
-                <form action="" method="GET" class="input-group">
-                    <input type="text" name="search" class="form-control form-control-sm" 
-                           placeholder="ค้นหาสินค้า..." 
-                           value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="fas fa-search"></i>
-                    </button>
-                    <?php if(isset($_GET['search'])): ?>
-                        <a href="sh_product.php" class="btn btn-outline-secondary btn-sm">
-                            <i class="fas fa-times"></i>
+            <div class="col-md-8">
+                <form action="" method="GET" class="d-flex gap-2">
+                    <!-- ช่องค้นหา -->
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="ค้นหาสินค้า..." 
+                               value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+
+                    <!-- เลือกประเภทสินค้า -->
+                    <select name="type_id" class="form-select" style="width: auto;" 
+                            onchange="this.form.submit()">
+                        <option value="">ทุกประเภท</option>
+                        <?php
+                        // ดึงข้อมูลประเภทสินค้า
+                        $type_sql = "SELECT * FROM type ORDER BY type_name";
+                        $type_result = $conn->query($type_sql);
+                        while ($type = $type_result->fetch_assoc()):
+                        ?>
+                            <option value="<?= $type['type_id'] ?>" 
+                                    <?= (isset($_GET['type_id']) && $_GET['type_id'] == $type['type_id']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($type['type_name']) ?>
+                            </option>
+                        <?php endwhile; ?>
+                    </select>
+
+                    <?php if(isset($_GET['search']) || isset($_GET['type_id'])): ?>
+                        <a href="sh_product.php" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> ล้างตัวกรอง
                         </a>
                     <?php endif; ?>
                 </form>
@@ -389,10 +455,10 @@ $result = $stmt->get_result();
         </div>
 
         <?php if ($result->num_rows == 0): ?>
-            <div class="alert alert-info py-2 px-3" style="font-size: 0.9rem;">
-                <i class="fas fa-info-circle me-1"></i>
-                <?php if($search): ?>
-                    ไม่พบสินค้าที่ตรงกับ "<?= htmlspecialchars($search) ?>"
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <?php if(isset($_GET['search']) || isset($_GET['type_id'])): ?>
+                    ไม่พบสินค้าที่ตรงกับเงื่อนไขที่เลือก
                 <?php else: ?>
                     ไม่มีสินค้าในระบบ
                 <?php endif; ?>
@@ -406,26 +472,41 @@ $result = $stmt->get_result();
             <?php while ($row = $result->fetch_assoc()): ?>
                 <div class="col">
                     <div class="card h-100">
-                        <img src="img/<?= $row['image'] ?>" class="card-img-top" 
-                             alt="<?= htmlspecialchars($row['po_name']) ?>">
-                        <div class="card-body">
-                            <h5 class="card-title text-truncate" title="<?= htmlspecialchars($row['po_name']) ?>">
-                                <?= $row['po_name'] ?>
-                            </h5>
-                            <p class="card-text mb-1">
-                                <span class="badge bg-info"><?= $row['type_name'] ?></span>
-                            </p>
-                            <p class="card-text mb-1">
-                                ฿<?= number_format($row['price'], 2) ?>
-                            </p>
-                            <p class="card-text">
-                                <?php if($row['amount'] > 0): ?>
-                                    <small class="text-success">มีสินค้า <?= $row['amount'] ?></small>
-                                <?php else: ?>
-                                    <small class="text-danger">สินค้าหมด</small>
-                                <?php endif; ?>
-                            </p>
+                        <div class="position-relative">
+                            <img src="img/<?= $row['image'] ?>" class="card-img-top" 
+                                 alt="<?= htmlspecialchars($row['po_name']) ?>"
+                                 style="height: 200px; object-fit: cover;">
+                            <?php if ($row['amount'] <= 0): ?>
+                                <div class="sold-out-badge">สินค้าหมด</div>
+                            <?php endif; ?>
                         </div>
+                        <div class="card-body">
+                            <h5 class="card-title"><?= htmlspecialchars($row['po_name']) ?></h5>
+                            
+                            <!-- เพิ่มรายละเอียดสั้น -->
+                            <?php if (!empty($row['description'])): ?>
+                                <p class="card-text description">
+                                    <?= nl2br(htmlspecialchars($row['description'])) ?>
+                                </p>
+                            <?php endif; ?>
+
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-primary"><?= htmlspecialchars($row['type_name']) ?></span>
+                                <span class="text-danger fw-bold">฿<?= number_format($row['price'], 2) ?></span>
+                            </div>
+
+                            <!-- ปุ่มดูรายละเอียด -->
+                            <?php if (!empty($row['detail'])): ?>
+                                <button type="button" 
+                                        class="btn btn-outline-primary btn-sm w-100 mb-2"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#productModal<?= $row['po_id'] ?>">
+                                    <i class="fas fa-info-circle"></i> ดูรายละเอียด
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <!-- ส่วนเพิ่มลงตะกร้า -->
                         <div class="card-footer bg-transparent border-top-0 p-2">
                             <?php if($row['amount'] > 0): ?>
                                 <form action="" method="GET" class="d-flex gap-1">
@@ -454,6 +535,37 @@ $result = $stmt->get_result();
                         </div>
                     </div>
                 </div>
+
+                <!-- Modal แสดงรายละเอียด -->
+                <?php if (!empty($row['detail'])): ?>
+                <div class="modal fade" id="productModal<?= $row['po_id'] ?>" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"><?= htmlspecialchars($row['po_name']) ?></h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <img src="img/<?= $row['image'] ?>" 
+                                             class="img-fluid rounded" 
+                                             alt="<?= htmlspecialchars($row['po_name']) ?>">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>รายละเอียดสินค้า</h6>
+                                        <p><?= nl2br(htmlspecialchars($row['detail'])) ?></p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="badge bg-primary"><?= htmlspecialchars($row['type_name']) ?></span>
+                                            <span class="text-danger fw-bold">฿<?= number_format($row['price'], 2) ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
             <?php endwhile; ?>
         </div>
     </div>

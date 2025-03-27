@@ -2,139 +2,115 @@
 session_start();
 include 'condb.php';
 
-// ตรวจสอบการส่งฟอร์ม
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $po_name = $_POST['po_name'];
-    $type_id = $_POST['type_id'];
-    $price = $_POST['price'];
-    $amount = $_POST['amount'];
-    
-    // ตรวจสอบการอัพโหลดรูปภาพ
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $file = $_FILES['image'];
-        $allow_types = ['image/jpeg', 'image/jpg', 'image/png'];
-        $max_size = 2 * 1024 * 1024; // 2MB
-        
-        // ตรวจสอบประเภทไฟล์
-        if (!in_array($file['type'], $allow_types)) {
-            echo "<script>
-                alert('กรุณาอัพโหลดไฟล์รูปภาพ (jpg, jpeg, png) เท่านั้น');
-                window.history.back();
-            </script>";
-            exit();
-        }
-        
-        // ตรวจสอบขนาดไฟล์
-        if ($file['size'] > $max_size) {
-            echo "<script>
-                alert('ไฟล์มีขนาดใหญ่เกินไป (ไม่เกิน 2MB)');
-                window.history.back();
-            </script>";
-            exit();
-        }
-        
-        // สร้างชื่อไฟล์ใหม่
-        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $new_filename = uniqid() . '.' . $extension;
-        $upload_path = 'img/' . $new_filename;
-        
-        // อัพโหลดไฟล์
-        if (!move_uploaded_file($file['tmp_name'], $upload_path)) {
-            $error = error_get_last();
-            echo "<script>
-                alert('เกิดข้อผิดพลาดในการอัพโหลดไฟล์: " . 
-                ($error ? $error['message'] : 'Unknown error') . "');
-                window.history.back();
-            </script>";
-            exit();
-        }
-        
-        // เพิ่มข้อมูลลงฐานข้อมูล
-        $sql = "INSERT INTO product (po_name, type_id, price, amount, image) 
-                VALUES (?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("siids", $po_name, $type_id, $price, $amount, $new_filename);
-        
-        if ($stmt->execute()) {
-            echo "<script>
-                alert('เพิ่มสินค้าเรียบร้อยแล้ว');
-                window.location.href = 'sh_product_ad.php';
-            </script>";
-        } else {
-            echo "<script>
-                alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
-                window.history.back();
-            </script>";
-        }
-    } else {
-        echo "<script>
-            alert('กรุณาเลือกรูปภาพสินค้า');
-            window.history.back();
-        </script>";
-    }
+// ตรวจสอบสิทธิ์แอดมิน
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] != 1) {
+    header("Location: login.php");
+    exit();
 }
 
-// ดึงข้อมูลประเภทสินค้า
-$type_sql = "SELECT * FROM type ORDER BY type_name";
-$type_result = mysqli_query($conn, $type_sql);
-
-$title = "เพิ่มสินค้าใหม่";
+$title = "เพิ่มสินค้า";
 include 'header.php';
+
+// ดึงข้อมูลประเภทสินค้า
+$sql = "SELECT * FROM type ORDER BY type_name";
+$result = mysqli_query($conn, $sql);
 ?>
 
-<div class="container-fluid">
-    <div class="card">
-        <div class="card-header">
-            <h4 class="mb-0">เพิ่มสินค้าใหม่</h4>
-        </div>
-        <div class="card-body">
-            <form action="" method="POST" enctype="multipart/form-data">
-                <div class="mb-3">
-                    <label class="form-label">ชื่อสินค้า</label>
-                    <input type="text" name="po_name" class="form-control" required>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus-circle me-2"></i>เพิ่มสินค้า
+                    </h4>
                 </div>
+                <div class="card-body">
+                    <form action="insert_product.php" method="post" enctype="multipart/form-data">
+                        <div class="row g-3">
+                            <!-- ชื่อสินค้า -->
+                            <div class="col-md-6">
+                                <label class="form-label">ชื่อสินค้า</label>
+                                <input type="text" name="po_name" class="form-control" required>
+                            </div>
 
-                <div class="mb-3">
-                    <label class="form-label">ประเภทสินค้า</label>
-                    <select name="type_id" class="form-select" required>
-                        <option value="">เลือกประเภทสินค้า</option>
-                        <?php while($type = mysqli_fetch_assoc($type_result)) { ?>
-                            <option value="<?= $type['type_id'] ?>">
-                                <?= $type['type_name'] ?>
-                            </option>
-                        <?php } ?>
-                    </select>
-                </div>
+                            <!-- ประเภทสินค้า -->
+                            <div class="col-md-6">
+                                <label class="form-label">ประเภทสินค้า</label>
+                                <select name="type_id" class="form-select" required>
+                                    <option value="">เลือกประเภทสินค้า</option>
+                                    <?php while($row = mysqli_fetch_assoc($result)): ?>
+                                        <option value="<?= $row['type_id'] ?>">
+                                            <?= htmlspecialchars($row['type_name']) ?>
+                                        </option>
+                                    <?php endwhile; ?>
+                                </select>
+                            </div>
 
-                <div class="mb-3">
-                    <label class="form-label">ราคา</label>
-                    <input type="number" name="price" class="form-control" min="0" step="0.01" required>
-                </div>
+                            <!-- ราคา -->
+                            <div class="col-md-6">
+                                <label class="form-label">ราคา</label>
+                                <div class="input-group">
+                                    <input type="number" name="price" class="form-control" 
+                                           min="0" step="0.01" required>
+                                    <span class="input-group-text">บาท</span>
+                                </div>
+                            </div>
 
-                <div class="mb-3">
-                    <label class="form-label">จำนวน</label>
-                    <input type="number" name="amount" class="form-control" min="0" required>
-                </div>
+                            <!-- จำนวน -->
+                            <div class="col-md-6">
+                                <label class="form-label">จำนวน</label>
+                                <input type="number" name="amount" class="form-control" 
+                                       min="0" required>
+                            </div>
 
-                <div class="mb-3">
-                    <label class="form-label">รูปภาพสินค้า</label>
-                    <input type="file" name="image" class="form-control" accept="image/*" required 
-                           onchange="previewImage(this)">
-                    <div class="form-text">รองรับไฟล์ภาพ jpg, jpeg, png ขนาดไม่เกิน 2MB</div>
-                    <div id="image-preview" class="mt-2 text-center" style="display: none;">
-                        <img src="" alt="ตัวอย่างรูปภาพ" class="img-fluid" style="max-height: 200px;">
-                    </div>
-                </div>
+                            <!-- คำอธิบายสั้น -->
+                            <div class="col-12">
+                                <label class="form-label">คำอธิบายสั้น</label>
+                                <textarea name="description" class="form-control" 
+                                          rows="2" maxlength="255"
+                                          placeholder="คำอธิบายสั้นๆ ที่จะแสดงในหน้ารายการสินค้า"></textarea>
+                                <div class="form-text">ไม่เกิน 255 ตัวอักษร</div>
+                            </div>
 
-                <div class="mb-3">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> บันทึก
-                    </button>
-                    <a href="sh_product_ad.php" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> ยกเลิก
-                    </a>
+                            <!-- รายละเอียดเพิ่มเติม -->
+                            <div class="col-12">
+                                <label class="form-label">รายละเอียดเพิ่มเติม</label>
+                                <textarea name="detail" class="form-control" rows="4"
+                                          placeholder="รายละเอียดเพิ่มเติมของสินค้า"></textarea>
+                            </div>
+
+                            <!-- รูปภาพ -->
+                            <div class="col-12">
+                                <label class="form-label">รูปภาพสินค้า</label>
+                                <input type="file" name="image" class="form-control" 
+                                       accept="image/*" required
+                                       onchange="previewImage(this)">
+                                <div class="form-text">รองรับไฟล์ภาพ jpg, jpeg, png ขนาดไม่เกิน 2MB</div>
+                            </div>
+
+                            <!-- แสดงตัวอย่างรูปภาพ -->
+                            <div class="col-12">
+                                <div id="image-preview" class="mt-2 text-center" style="display: none;">
+                                    <img src="" alt="ตัวอย่างรูปภาพ" 
+                                         class="img-thumbnail" 
+                                         style="max-height: 200px;">
+                                </div>
+                            </div>
+
+                            <!-- ปุ่มบันทึก -->
+                            <div class="col-12 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary flex-grow-1">
+                                    <i class="fas fa-save me-2"></i>บันทึกข้อมูล
+                                </button>
+                                <a href="sh_product_ad.php" class="btn btn-secondary">
+                                    <i class="fas fa-times me-2"></i>ยกเลิก
+                                </a>
+                            </div>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
