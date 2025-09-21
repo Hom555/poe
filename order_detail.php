@@ -16,16 +16,19 @@ if (!isset($_GET['order_id'])) {
 
 $order_id = intval($_GET['order_id']);
 
-// ดึงข้อมูลคำสั่งซื้อและรายละเอียด
-$sql = "SELECT o.*, od.quantity, od.price as item_price, od.total as item_total,
-        p.po_id, p.po_name, p.image,
+// ดึงข้อมูลคำสั่งซื้อและรายละเอียด - แก้ไขให้ตรงกับโครงสร้างฐานข้อมูลใหม่
+$sql = "SELECT o.*, u.name, u.address, u.province, u.district, u.subdistrict, u.zipcode, u.phone,
+        od.quantity, od.price as item_price, od.total as item_total,
+        p.id as product_id, p.name as product_name, p.image,
         t.type_name,
-        u.username, u.email
+        ps.size
         FROM orders o
-        LEFT JOIN order_details od ON o.order_id = od.order_id
-        LEFT JOIN product p ON od.product_id = p.po_id
-        LEFT JOIN type t ON p.type_id = t.type_id
         LEFT JOIN users u ON o.user_id = u.user_id
+        LEFT JOIN order_details od ON o.order_id = od.order_id
+        LEFT JOIN products p ON od.product_id = p.id
+        LEFT JOIN type t ON p.type_id = t.type_id
+        LEFT JOIN product_sizes ps ON p.id = ps.product_base_id 
+            AND od.price = ps.price
         WHERE o.order_id = ?";
 
 $stmt = $conn->prepare($sql);
@@ -61,7 +64,7 @@ if (isset($_POST['update_status'])) {
     }
 }
 
-$title = "รายละเอียดคำสั่งซื้อ #" . str_pad($order_id, 8, '0', STR_PAD_LEFT);
+$title = "รายละเอียดคำสั่งซื้อ";
 include 'header.php';
 ?>
 
@@ -71,7 +74,7 @@ include 'header.php';
             <div class="d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
                     <i class="fas fa-info-circle me-2"></i>
-                    รายละเอียดคำสั่งซื้อ #<?= str_pad($order_id, 8, '0', STR_PAD_LEFT) ?>
+                    รายละเอียดคำสั่งซื้อ
                 </h5>
                 <a href="admin_orders.php" class="btn btn-light btn-sm">
                     <i class="fas fa-arrow-left me-1"></i>กลับ
@@ -83,29 +86,29 @@ include 'header.php';
             <div class="row mb-4">
                 <div class="col-md-6">
                     <h6 class="border-bottom pb-2">ข้อมูลลูกค้า</h6>
-                    <p class="mb-1">ชื่อ: <?= htmlspecialchars($order_info['name']) ?></p>
-                    <p class="mb-1">อีเมล: <?= htmlspecialchars($order_info['email']) ?></p>
-                    <p class="mb-1">เบอร์โทร: <?= htmlspecialchars($order_info['phone']) ?></p>
+                    <p class="mb-1"><strong>ชื่อ:</strong> <?= htmlspecialchars($order_info['name'] ?? 'ไม่ระบุ') ?></p>
+                    <p class="mb-1"><strong>เบอร์โทร:</strong> <?= htmlspecialchars($order_info['phone'] ?? 'ไม่ระบุ') ?></p>
                     <p class="mb-1">
-                        ที่อยู่: <?= htmlspecialchars($order_info['address']) ?><br>
-                        ตำบล/แขวง: <?= htmlspecialchars($order_info['subdistrict']) ?><br>
-                        อำเภอ/เขต: <?= htmlspecialchars($order_info['district']) ?><br>
-                        จังหวัด: <?= htmlspecialchars($order_info['province']) ?><br>
-                        รหัสไปรษณีย์: <?= htmlspecialchars($order_info['zipcode']) ?>
+                        <strong>ที่อยู่:</strong> <?= htmlspecialchars($order_info['address'] ?? 'ไม่ระบุ') ?><br>
+                        <strong>ตำบล/แขวง:</strong> <?= htmlspecialchars($order_info['subdistrict'] ?? 'ไม่ระบุ') ?><br>
+                        <strong>อำเภอ/เขต:</strong> <?= htmlspecialchars($order_info['district'] ?? 'ไม่ระบุ') ?><br>
+                        <strong>จังหวัด:</strong> <?= htmlspecialchars($order_info['province'] ?? 'ไม่ระบุ') ?><br>
+                        <strong>รหัสไปรษณีย์:</strong> <?= htmlspecialchars($order_info['zipcode'] ?? 'ไม่ระบุ') ?>
                     </p>
                 </div>
                 <div class="col-md-6">
                     <h6 class="border-bottom pb-2">ข้อมูลการสั่งซื้อ</h6>
-                    <p class="mb-1">วันที่สั่งซื้อ: <?= date('d/m/Y H:i', strtotime($order_info['order_date'])) ?></p>
-                    <p class="mb-1">ยอดรวม: <?= number_format($order_info['total_amount'], 2) ?> บาท</p>
-                    <p class="mb-1">สถานะ: 
+                    <p class="mb-1"><strong>เลขที่คำสั่งซื้อ:</strong> #<?= $order_info['order_id'] ?></p>
+                    <p class="mb-1"><strong>วันที่สั่งซื้อ:</strong> <?= date('d/m/Y H:i', strtotime($order_info['order_date'])) ?></p>
+                    <p class="mb-1"><strong>ยอดรวม:</strong> ฿<?= number_format($order_info['total_amount'], 2) ?></p>
+                    <?php if (!empty($order_info['payment_date'])): ?>
+                        <p class="mb-1"><strong>วันที่ชำระเงิน:</strong> <?= date('d/m/Y H:i', strtotime($order_info['payment_date'])) ?></p>
+                    <?php endif; ?>
+                    <p class="mb-1"><strong>สถานะ:</strong> 
                         <span class="badge bg-<?= getStatusColor($order_info['status']) ?>">
                             <?= $order_info['status'] ?>
                         </span>
                     </p>
-                    <?php if ($order_info['payment_date']): ?>
-                    <p class="mb-1">วันที่ชำระเงิน: <?= date('d/m/Y H:i', strtotime($order_info['payment_date'])) ?></p>
-                    <?php endif; ?>
                 </div>
             </div>
 
@@ -116,9 +119,9 @@ include 'header.php';
                     <thead class="table-light">
                         <tr>
                             <th>รูปภาพ</th>
-                            <th>รหัสสินค้า</th>
                             <th>สินค้า</th>
                             <th>ประเภท</th>
+                            <th>ไซส์</th>
                             <th class="text-end">ราคา/ชิ้น</th>
                             <th class="text-center">จำนวน</th>
                             <th class="text-end">รวม</th>
@@ -128,23 +131,31 @@ include 'header.php';
                     <?php
                     $total = 0;
                     while ($item = $result->fetch_assoc()):
-                        if ($item['po_id']): // ตรวจสอบว่ามีข้อมูลสินค้า
+                        if ($item['product_id']): // ตรวจสอบว่ามีข้อมูลสินค้า
                         $subtotal = $item['item_price'] * $item['quantity'];
                         $total += $subtotal;
+                        $image_src = strpos($item['image'], 'http') === 0 ? 
+                            $item['image'] : 'img/' . $item['image'];
                     ?>
                         <tr>
                             <td width="80">
-                                <img src="image/<?= $item['image'] ?>" 
-                                     alt="<?= htmlspecialchars($item['po_name']) ?>"
+                                <img src="<?= htmlspecialchars($image_src) ?>" 
+                                     alt="<?= htmlspecialchars($item['product_name']) ?>"
                                      class="img-thumbnail" 
                                      style="width: 50px; height: 50px; object-fit: cover;">
                             </td>
-                            <td><?= str_pad($item['po_id'], 5, '0', STR_PAD_LEFT) ?></td>
-                            <td><?= htmlspecialchars($item['po_name']) ?></td>
+                            <td><?= htmlspecialchars($item['product_name']) ?></td>
                             <td><?= htmlspecialchars($item['type_name']) ?></td>
-                            <td class="text-end"><?= number_format($item['item_price'], 2) ?></td>
+                            <td>
+                                <?php if (!empty($item['size'])): ?>
+                                    <span class="badge bg-secondary"><?= $item['size'] ?></span>
+                                <?php else: ?>
+                                    <span class="text-muted">-</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="text-end">฿<?= number_format($item['item_price'], 2) ?></td>
                             <td class="text-center"><?= $item['quantity'] ?></td>
-                            <td class="text-end"><?= number_format($subtotal, 2) ?></td>
+                            <td class="text-end">฿<?= number_format($subtotal, 2) ?></td>
                         </tr>
                     <?php 
                         endif;
@@ -154,7 +165,7 @@ include 'header.php';
                     <tfoot class="table-light">
                         <tr>
                             <td colspan="6" class="text-end"><strong>รวมทั้งหมด</strong></td>
-                            <td class="text-end"><strong><?= number_format($order_info['total_amount'], 2) ?></strong></td>
+                            <td class="text-end"><strong>฿<?= number_format($order_info['total_amount'], 2) ?></strong></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -164,7 +175,7 @@ include 'header.php';
             <?php if (!empty($order_info['payment_slip'])): ?>
             <div class="text-center mt-4">
                 <h6 class="border-bottom pb-2 mb-3">หลักฐานการโอนเงิน</h6>
-                <img src="slips/<?= $order_info['payment_slip'] ?>" 
+                <img src="slips/<?= htmlspecialchars($order_info['payment_slip']) ?>" 
                      alt="สลิปการโอนเงิน" 
                      class="img-fluid" 
                      style="max-height: 400px;">
@@ -225,6 +236,7 @@ include 'header.php';
 <?php
 function getStatusColor($status) {
     switch ($status) {
+        case 'รอการชำระเงิน': return 'warning';
         case 'รอตรวจสอบการชำระเงิน': return 'warning';
         case 'ชำระเงินแล้ว': return 'info';
         case 'กำลังจัดส่ง': return 'primary';

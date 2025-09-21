@@ -5,6 +5,7 @@ error_reporting(E_ALL);
 
 include 'condb.php';
 
+
 // ตรวจสอบ order_id
 if (!isset($_GET['order_id']) || empty($_GET['order_id'])) {
     echo "<script>
@@ -17,9 +18,9 @@ if (!isset($_GET['order_id']) || empty($_GET['order_id'])) {
 $order_id = intval($_GET['order_id']); // แปลงเป็นตัวเลข
 
 try {
-    // ดึงข้อมูลคำสั่งซื้อ
-    $sql = "SELECT o.*, u.username 
-            FROM orders o
+    // ดึงข้อมูลคำสั่งซื้อและข้อมูลลูกค้า - แก้ไขให้ตรงกับโครงสร้างฐานข้อมูลใหม่
+    $sql = "SELECT o.*, u.name, u.address, u.province, u.district, u.subdistrict, u.zipcode, u.phone
+            FROM orders o 
             LEFT JOIN users u ON o.user_id = u.user_id 
             WHERE o.order_id = ?";
     $stmt = $conn->prepare($sql);
@@ -35,13 +36,31 @@ try {
         throw new Exception("ไม่พบข้อมูลคำสั่งซื้อ");
     }
 
-    // ดึงรายการสินค้า
-    $sql = "SELECT od.quantity, od.price, p.po_name, p.po_id, 
-            IFNULL(t.type_name, 'ไม่ระบุประเภท') as type_name 
-            FROM order_details od 
-            JOIN product p ON od.product_id = p.po_id 
-            LEFT JOIN type t ON p.type_id = t.type_id 
-            WHERE od.order_id = ?";
+    // ดึงรายการสินค้า - แก้ไขให้ตรงกับโครงสร้างฐานข้อมูลใหม่
+    // ตรวจสอบว่าตารางมีคอลัมน์ size และ color หรือไม่
+    $check_columns_sql = "SHOW COLUMNS FROM order_details LIKE 'size'";
+    $check_result = $conn->query($check_columns_sql);
+    $has_size_column = $check_result && $check_result->num_rows > 0;
+    
+    if ($has_size_column) {
+        // ใช้คอลัมน์ size และ color จาก order_details
+        $sql = "SELECT od.quantity, od.price, p.name as product_name, p.id as product_id, 
+                COALESCE(od.size, 'ไม่ระบุ') as size,
+                COALESCE(od.color, 'ไม่ระบุ') as color
+                FROM order_details od 
+                JOIN products p ON od.product_id = p.id 
+                WHERE od.order_id = ?";
+    } else {
+        // Fallback สำหรับโครงสร้างเก่า
+        $sql = "SELECT od.quantity, od.price, p.name as product_name, p.id as product_id, 
+                COALESCE(ps.size, 'ไม่ระบุ') as size,
+                COALESCE(ps.color, 'ไม่ระบุ') as color
+                FROM order_details od 
+                JOIN products p ON od.product_id = p.id 
+                LEFT JOIN product_sizes ps ON p.id = ps.product_base_id 
+                    AND od.price = ps.price
+                WHERE od.order_id = ?";
+    }
     $stmt = $conn->prepare($sql);
     if ($stmt === false) {
         throw new Exception("เกิดข้อผิดพลาดในการเตรียมคำสั่ง SQL: " . $conn->error);
@@ -67,26 +86,80 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ใบสั่งซื้อ #<?= str_pad($order_id, 8, '0', STR_PAD_LEFT) ?></title>
+    <title>ใบสั่งซื้อ</title>
     <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <style>
         @media print {
             .no-print { display: none; }
             .print-only { display: block; }
-            @page { margin: 0.5cm; }
-            body { padding: 0.5cm; }
+            @page { 
+                margin: 1cm; 
+                size: A4;
+            }
+            body { 
+                padding: 0; 
+                font-size: 12px;
+                line-height: 1.4;
+            }
+            .container {
+                max-width: 100%;
+            }
         }
         .company-info {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+        .company-info h2 {
+            color: #333;
+            margin-bottom: 10px;
         }
         .order-info, .customer-info {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+        }
+        .order-info h4, .customer-info h4 {
+            color: #333;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        .table {
+            margin-bottom: 30px;
         }
         .table th, .table td {
             padding: 8px;
+            border: 1px solid #333;
         }
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .table tfoot td {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .payment-slip {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .payment-slip img {
+            border: 1px solid #333;
+            max-width: 100%;
+        }
+        .signature-section {
+            margin-top: 50px;
+        }
+        .signature-section p {
+            margin-bottom: 5px;
+        }
+        .signature-line {
+            border-bottom: 1px solid #333;
+            width: 200px;
+            margin: 0 auto 20px auto;
+        }
+        
     </style>
 </head>
 <body class="p-4">
@@ -112,19 +185,23 @@ try {
         <div class="row order-info">
             <div class="col-6">
                 <h4>ใบสั่งซื้อ</h4>
-                <p>เลขที่: <?= str_pad($order_id, 8, '0', STR_PAD_LEFT) ?></p>
-                <p>วันที่: <?= date('d/m/Y H:i', strtotime($order['order_date'])) ?></p>
+                <p><strong>เลขที่คำสั่งซื้อ:</strong> #<?= $order['order_id'] ?></p>
+                <p><strong>วันที่สั่งซื้อ:</strong> <?= date('d/m/Y H:i', strtotime($order['order_date'])) ?></p>
+                <p><strong>สถานะ:</strong> <?= htmlspecialchars($order['status'] ?? 'ไม่ระบุ') ?></p>
+                <?php if (!empty($order['payment_date'])): ?>
+                    <p><strong>วันที่ชำระเงิน:</strong> <?= date('d/m/Y H:i', strtotime($order['payment_date'])) ?></p>
+                <?php endif; ?>
             </div>
             <div class="col-6 customer-info">
                 <h4>ข้อมูลลูกค้า</h4>
-                <p>ชื่อ: <?= htmlspecialchars($order['name']) ?></p>
-                <p>ที่อยู่: <?= htmlspecialchars($order['address']) ?><br>
-                   <?= htmlspecialchars($order['subdistrict']) ?> 
-                   <?= htmlspecialchars($order['district']) ?><br>
-                   <?= htmlspecialchars($order['province']) ?> 
-                   <?= htmlspecialchars($order['zipcode']) ?>
+                <p>ชื่อ: <?= htmlspecialchars($order['name'] ?? 'ไม่ระบุ') ?></p>
+                <p>ที่อยู่: <?= htmlspecialchars($order['address'] ?? 'ไม่ระบุ') ?><br>
+                   <?= htmlspecialchars($order['subdistrict'] ?? '') ?> 
+                   <?= htmlspecialchars($order['district'] ?? '') ?><br>
+                   <?= htmlspecialchars($order['province'] ?? '') ?> 
+                   <?= htmlspecialchars($order['zipcode'] ?? '') ?>
                 </p>
-                <p>เบอร์โทร: <?= htmlspecialchars($order['phone']) ?></p>
+                <p>เบอร์โทร: <?= htmlspecialchars($order['phone'] ?? 'ไม่ระบุ') ?></p>
             </div>
         </div>
 
@@ -133,10 +210,10 @@ try {
             <thead>
                 <tr>
                     <th width="5%">ลำดับ</th>
-                    <th width="15%">รหัสสินค้า</th>
-                    <th width="30%">รายการ</th>
-                    <th width="15%">ประเภท</th>
-                    <th width="10%" class="text-end">ราคา/หน่วย</th>
+                    <th width="35%">รายการ</th>
+                    <th width="10%">ไซส์</th>
+                    <th width="10%">สี</th>
+                    <th width="15%" class="text-end">ราคา/หน่วย</th>
                     <th width="10%" class="text-center">จำนวน</th>
                     <th width="15%" class="text-end">รวม</th>
                 </tr>
@@ -151,33 +228,60 @@ try {
                 ?>
                 <tr>
                     <td><?= $i++ ?></td>
-                    <td><?= str_pad($item['po_id'], 5, '0', STR_PAD_LEFT) ?></td>
-                    <td><?= htmlspecialchars($item['po_name']) ?></td>
-                    <td><?= htmlspecialchars($item['type_name']) ?></td>
-                    <td class="text-end"><?= number_format($item['price'], 2) ?></td>
+                    <td><?= htmlspecialchars($item['product_name']) ?></td>
+                    <td>
+                        <?php if (!empty($item['size']) && $item['size'] !== 'ไม่ระบุ'): ?>
+                            <?= $item['size'] ?>
+                        <?php else: ?>
+                            <span style="color: #6c757d;">-</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <?php if (!empty($item['color']) && $item['color'] !== 'ไม่ระบุ'): ?>
+                            <?= htmlspecialchars($item['color']) ?>
+                        <?php else: ?>
+                            <span style="color: #6c757d;">-</span>
+                        <?php endif; ?>
+                    </td>
+                    <td class="text-end">฿<?= number_format($item['price'], 2) ?></td>
                     <td class="text-center"><?= $item['quantity'] ?></td>
-                    <td class="text-end"><?= number_format($subtotal, 2) ?></td>
+                    <td class="text-end">฿<?= number_format($subtotal, 2) ?></td>
                 </tr>
                 <?php endwhile; ?>
             </tbody>
             <tfoot>
                 <tr>
                     <td colspan="6" class="text-end"><strong>รวมทั้งสิ้น</strong></td>
-                    <td class="text-end"><strong><?= number_format($total, 2) ?></strong></td>
+                    <td class="text-end"><strong>฿<?= number_format($order['total_amount'], 2) ?></strong></td>
                 </tr>
             </tfoot>
         </table>
 
+        <!-- หลักฐานการโอนเงิน -->
+        <?php if (!empty($order['payment_slip'])): ?>
+        <div class="row mt-4">
+            <div class="col-12">
+                <h5>หลักฐานการโอนเงิน</h5>
+                <div class="text-center">
+                    <img src="slips/<?= htmlspecialchars($order['payment_slip']) ?>" 
+                         alt="สลิปการโอนเงิน" 
+                         class="img-fluid border" 
+                         style="max-height: 300px;">
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- ลายเซ็น -->
-        <div class="row mt-5">
+        <div class="row signature-section">
             <div class="col-6 text-center">
-                <p>____________________</p>
-                <p>ผู้รับสินค้า</p>
+                <div class="signature-line"></div>
+                <p><strong>ผู้รับสินค้า</strong></p>
                 <p>วันที่ ____/____/____</p>
             </div>
             <div class="col-6 text-center">
-                <p>____________________</p>
-                <p>ผู้ส่งสินค้า</p>
+                <div class="signature-line"></div>
+                <p><strong>ผู้ส่งสินค้า</strong></p>
                 <p>วันที่ ____/____/____</p>
             </div>
         </div>

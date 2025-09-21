@@ -1,0 +1,73 @@
+# Database
+*.sql
+*.db
+*.sqlite
+
+# Configuration files with sensitive data
+config.php
+database.php
+.env
+.env.local
+
+# Logs
+*.log
+logs/
+error.log
+access.log
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# PHP
+vendor/
+composer.lock
+*.cache
+
+# Images (excluding problematic files)
+img/*.jpg
+img/*.jpeg
+img/*.png
+img/*.gif
+img/*.webp
+uploads/
+assets/images/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Test files (already removed but just in case)
+test_*.php
+debug_*.php
+check_*.php
+*_test.php
+
+# Node modules (if using any frontend build tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build files
+dist/
+build/

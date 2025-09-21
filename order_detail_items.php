@@ -2,7 +2,7 @@
 $title = "รายละเอียดคำสั่งซื้อ";
 include 'header.php';
 
-$order_id = $_GET['id'];
+$order_id = $_GET['order_id'];
 
 // ดึงข้อมูลคำสั่งซื้อ
 $sql = "SELECT tb_order.*, member.name 
@@ -78,7 +78,7 @@ $items_result = mysqli_query($conn, $items_sql);
         </table>
 
         <div class="mt-3">
-            <a href="order_detail.php" class="btn btn-secondary">กลับ</a>
+            <a href="order_detail.php?order_id=<?= $order_id ?>" class="btn btn-secondary">กลับ</a>
         </div>
     </div>
 </div>

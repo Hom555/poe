@@ -20,7 +20,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 try {
     // รับข้อมูลจากฟอร์ม
-    $username = trim($_POST['username']);
     $email = trim($_POST['email']);
     $password = $_POST['password']; // เก็บรหัสผ่านแบบไม่เข้ารหัส
     $first_name = trim($_POST['first_name']);
@@ -34,7 +33,7 @@ try {
     $status = intval($_POST['status']);
 
     // ตรวจสอบข้อมูลที่จำเป็น
-    if (empty($username) || empty($email) || empty($password)) {
+    if (empty($email) || empty($password)) {
         $_SESSION['error'] = "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน";
         header("Location: users.php");
         exit();
@@ -54,28 +53,28 @@ try {
         exit();
     }
 
-    // ตรวจสอบว่ามี username หรือ email ซ้ำหรือไม่
-    $check_sql = "SELECT COUNT(*) as count FROM users WHERE username = ? OR email = ?";
+    // ตรวจสอบว่ามี email ซ้ำหรือไม่
+    $check_sql = "SELECT COUNT(*) as count FROM users WHERE email = ?";
     $check_stmt = $conn->prepare($check_sql);
     if (!$check_stmt) {
         throw new Exception("Error preparing check statement: " . $conn->error);
     }
     
-    $check_stmt->bind_param("ss", $username, $email);
+    $check_stmt->bind_param("s", $email);
     $check_stmt->execute();
     $check_result = $check_stmt->get_result();
     $check_row = $check_result->fetch_assoc();
 
     if ($check_row['count'] > 0) {
-        $_SESSION['error'] = "ชื่อผู้ใช้หรืออีเมลนี้มีอยู่ในระบบแล้ว";
+        $_SESSION['error'] = "อีเมลนี้มีอยู่ในระบบแล้ว";
         header("Location: users.php");
         exit();
     }
 
     // เตรียม SQL สำหรับเพิ่มผู้ใช้
-    $sql = "INSERT INTO users (username, email, password, name, phone, 
+    $sql = "INSERT INTO users (email, password, name, phone, 
             address, subdistrict, district, province, zipcode, status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
@@ -85,8 +84,7 @@ try {
     // รวมชื่อและนามสกุล
     $full_name = trim($first_name . ' ' . $last_name);
 
-    $stmt->bind_param("ssssssssssi", 
-        $username, 
+    $stmt->bind_param("sssssssssi", 
         $email, 
         $password, // เก็บรหัสผ่านแบบไม่เข้ารหัส
         $full_name,

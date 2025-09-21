@@ -11,7 +11,7 @@ $result = mysqli_query($conn, $sql);
 if($result) {
     echo "<script>
         alert('อัพเดทสถานะเรียบร้อย');
-        window.location.href = 'order_detail.php';
+        window.location.href = 'order_detail.php?order_id=' + <?= $order_id ?>;
     </script>";
 } else {
     echo "<script>

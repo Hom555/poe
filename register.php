@@ -3,7 +3,8 @@ session_start();
 include 'condb.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = trim($_POST['username']);
+    $first_name = trim($_POST['first_name']);
+    $last_name = trim($_POST['last_name']);
     $email = trim($_POST['email']);
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
@@ -11,8 +12,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $errors = [];
 
     // Validate input
-    if (empty($username)) {
-        $errors[] = "กรุณากรอกชื่อผู้ใช้";
+    if (empty($first_name)) {
+        $errors[] = "กรุณากรอกชื่อ";
+    }
+
+    if (empty($last_name)) {
+        $errors[] = "กรุณากรอกนามสกุล";
     }
 
     if (empty($email)) {
@@ -35,12 +40,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $errors[] = "เบอร์โทรศัพท์ไม่ถูกต้อง";
     }
 
-    // Check if username already exists
-    $stmt = $conn->prepare("SELECT user_id FROM users WHERE username = ?");
-    $stmt->bind_param("s", $username);
+    // สร้าง full_name จากชื่อและนามสกุล
+    $full_name = $first_name . ' ' . $last_name;
+    
+    // Check if name already exists
+    $stmt = $conn->prepare("SELECT user_id FROM users WHERE name = ?");
+    $stmt->bind_param("s", $full_name);
     $stmt->execute();
     if ($stmt->get_result()->num_rows > 0) {
-        $errors[] = "ชื่อผู้ใช้นี้มีอยู่ในระบบแล้ว";
+        $errors[] = "ชื่อและนามสกุลนี้มีอยู่ในระบบแล้ว";
     }
 
     // Check if email already exists
@@ -55,10 +63,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // ไม่ต้องเข้ารหัสรหัสผ่าน
         $status = 2; // 1 = admin, 2 = user
 
-        $sql = "INSERT INTO users (username, email, password, phone, status) 
+        $sql = "INSERT INTO users (name, email, password, phone, status) 
                 VALUES (?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssssi", $username, $email, $password, $phone, $status);
+        $stmt->bind_param("ssssi", $full_name, $email, $password, $phone, $status);
 
         if ($stmt->execute()) {
             $_SESSION['register_success'] = "สมัครสมาชิกเรียบร้อยแล้ว กรุณาเข้าสู่ระบบ";
@@ -129,14 +137,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <?php endif; ?>
 
                 <form method="POST" action="">
-                    <div class="mb-3">
-                        <label for="username" class="form-label">ชื่อผู้ใช้ *</label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="fas fa-user"></i>
-                            </span>
-                            <input type="text" class="form-control" id="username" name="username" 
-                                   value="<?= htmlspecialchars($_POST['username'] ?? '') ?>" required>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">ชื่อ *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       placeholder="ชื่อ"
+                                       value="<?= htmlspecialchars($_POST['first_name'] ?? '') ?>" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">นามสกุล *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       placeholder="นามสกุล"
+                                       value="<?= htmlspecialchars($_POST['last_name'] ?? '') ?>" required>
+                            </div>
                         </div>
                     </div>
 
@@ -146,7 +168,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <span class="input-group-text">
                                 <i class="fas fa-envelope"></i>
                             </span>
-                            <input type="email" class="form-control" id="email" name="email" 
+                            <input type="email" class="form-control" id="email" name="email"
+                                   placeholder="example@email.com" 
                                    value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required>
                         </div>
                     </div>

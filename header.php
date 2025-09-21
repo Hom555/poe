@@ -156,6 +156,9 @@ if(isset($_SESSION['user_id'])) {
                         <a href="admin_orders.php"><i class="fas fa-shopping-cart"></i>คำสั่งซื้อ</a>
                     </div>
                     <div class="nav-item">
+                        <a href="sales_report.php"><i class="fas fa-chart-line"></i>รายงานการขาย</a>
+                    </div>
+                    <div class="nav-item">
                         <a href="add_product.php"><i class="fas fa-plus-circle"></i>เพิ่มสินค้า</a>
                     </div>
                 </div>
@@ -167,7 +170,25 @@ if(isset($_SESSION['user_id'])) {
                     </button>
                     <ul class="dropdown-menu">
                         <li>
-                            <a class="dropdown-item" href="profile.php">
+                            <?php
+                            // กำหนด return_to parameter ตามหน้าที่เรียกใช้
+                            $current_page = basename($_SERVER['PHP_SELF']);
+                            $return_to = '';
+                            
+                            switch($current_page) {
+                                case 'yaz.php':
+                                    $return_to = 'yaz';
+                                    break;
+                                case 'order_history.php':
+                                    $return_to = 'order_history';
+                                    break;
+                                case 'sh_product.php':
+                                default:
+                                    $return_to = 'sh_product';
+                                    break;
+                            }
+                            ?>
+                            <a class="dropdown-item" href="profile.php?return_to=<?= $return_to ?>">
                                 <i class="fas fa-user-circle"></i> ข้อมูลส่วนตัว
                             </a>
                         </li>

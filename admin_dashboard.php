@@ -25,7 +25,7 @@ $result_users = $conn->query($sql_users);
 $sql_products = "SELECT * FROM products";
 $result_products = $conn->query($sql_products);
 
-// ดึงข้อมูลช่างตัดผม
+// ดึงข้อมูล
 $sql_barbers = "SELECT * FROM barbers";
 $result_barbers = $conn->query($sql_barbers);
 

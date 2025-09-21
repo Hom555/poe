@@ -17,7 +17,7 @@ $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 // ดึงข้อมูลผู้ใช้งานทั้งหมด
 $sql = "SELECT * FROM users WHERE 1=1";
 if (!empty($search)) {
-    $sql .= " AND (username LIKE ? OR email LIKE ? OR phone LIKE ?)";
+    $sql .= " AND (name LIKE ? OR email LIKE ? OR phone LIKE ?)";
 }
 $sql .= " ORDER BY created_at DESC";
 
@@ -64,7 +64,7 @@ $result = $stmt->get_result();
                     <div class="col-md-6">
                         <div class="input-group">
                             <input type="text" name="search" class="form-control" 
-                                   placeholder="ค้นหาจากชื่อผู้ใช้, อีเมล หรือเบอร์โทร"
+                                   placeholder="ค้นหาจากชื่อ-นามสกุล, อีเมล หรือเบอร์โทร"
                                    value="<?= htmlspecialchars($search) ?>">
                             <button type="submit" class="btn btn-primary">ค้นหา</button>
                             <?php if (!empty($search)): ?>
@@ -89,7 +89,6 @@ $result = $stmt->get_result();
                         <tr>
                             <th>รหัส</th>
                             <th>ชื่อ-นามสกุล</th>
-                            <th>ชื่อผู้ใช้</th>
                             <th>อีเมล</th>
                             <th>เบอร์โทร</th>
                             <th>ที่อยู่</th>
@@ -103,7 +102,6 @@ $result = $stmt->get_result();
                             <tr>
                                 <td><?= str_pad($row['user_id'], 5, '0', STR_PAD_LEFT) ?></td>
                                 <td><?= htmlspecialchars($row['name'] ?: '-') ?></td>
-                                <td><?= htmlspecialchars($row['username']) ?></td>
                                 <td><?= htmlspecialchars($row['email']) ?></td>
                                 <td><?= htmlspecialchars($row['phone'] ?: '-') ?></td>
                                 <td>

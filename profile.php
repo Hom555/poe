@@ -17,12 +17,18 @@ $stmt->execute();
 $result = $stmt->get_result();
 $user = $result->fetch_assoc();
 
+// แยกชื่อและนามสกุลจากข้อมูลที่มีอยู่
+$full_name = $user['name'] ?? '';
+$name_parts = explode(' ', $full_name, 2);
+$first_name = $name_parts[0] ?? '';
+$last_name = $name_parts[1] ?? '';
+
 // อัพเดทข้อมูล
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = trim($_POST['username']);
     $email = trim($_POST['email']);
     $phone = trim($_POST['phone']);
-    $name = trim($_POST['name']);
+    $first_name = trim($_POST['first_name']);
+    $last_name = trim($_POST['last_name']);
     $address = trim($_POST['address']);
     $province = trim($_POST['province']);
     $district = trim($_POST['district']);
@@ -48,7 +54,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (empty($errors)) {
         // อัพเดทข้อมูล
         $update_sql = "UPDATE users SET 
-            username = ?, 
             email = ?, 
             phone = ?, 
             name = ?,
@@ -61,11 +66,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
         $stmt = $conn->prepare($update_sql);
         if ($stmt) {
-            $stmt->bind_param("sssssssssi",
-                $username,
+            // รวมชื่อและนามสกุล
+            $full_name = trim($first_name . ' ' . $last_name);
+            
+            $stmt->bind_param("ssssssssi",
                 $email,
                 $phone,
-                $name,
+                $full_name,
                 $address,
                 $province,
                 $district,
@@ -86,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     }
                 }
                 
-                $_SESSION['username'] = $username;
+                $_SESSION['username'] = $full_name; // ใช้ full_name แทน username
                 echo "<script>
                     alert('บันทึกข้อมูลเรียบร้อยแล้ว');
                     window.location = 'profile.php';
@@ -203,6 +210,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-radius: 12px;
         }
 
+        select.form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        select.form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: none;
+        }
+
+        select.form-control option {
+            padding: 8px;
+        }
+
+        select.form-control option:hover {
+            background-color: #f8f9fa;
+        }
+
         .btn {
             padding: 0.6rem 1.5rem;
             font-weight: 500;
@@ -289,19 +316,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                     <form method="POST" action="">
                         <div class="row mb-3">
-                            <label class="col-sm-3 col-form-label">ชื่อผู้ใช้</label>
-                            <div class="col-sm-9">
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="fas fa-user"></i>
-                                    </span>
-                                    <input type="text" class="form-control" name="username" 
-                                           value="<?= htmlspecialchars($user['username']) ?>" required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
                             <label class="col-sm-3 col-form-label">อีเมล</label>
                             <div class="col-sm-9">
                                 <div class="input-group">
@@ -328,14 +342,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         </div>
 
                         <div class="row mb-3">
-                            <label class="col-sm-3 col-form-label">ชื่อ-นามสกุล</label>
+                            <label class="col-sm-3 col-form-label">ชื่อ</label>
                             <div class="col-sm-9">
                                 <div class="input-group">
                                     <span class="input-group-text">
                                         <i class="fas fa-user"></i>
                                     </span>
-                                    <input type="text" class="form-control" name="name" 
-                                           value="<?= htmlspecialchars($user['name'] ?? '') ?>">
+                                    <input type="text" class="form-control" name="first_name" 
+                                           value="<?= htmlspecialchars($first_name) ?>" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label">นามสกุล</label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                    <input type="text" class="form-control" name="last_name" 
+                                           value="<?= htmlspecialchars($last_name) ?>" required>
                                 </div>
                             </div>
                         </div>
@@ -350,32 +377,50 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <div class="row mb-3">
                             <label class="col-sm-3 col-form-label">จังหวัด</label>
                             <div class="col-sm-9">
-                                <input type="text" class="form-control" name="province" 
-                                       value="<?= htmlspecialchars($user['province'] ?? '') ?>">
+                                <select class="form-control" name="province" id="province">
+                                    <option value="">เลือกจังหวัด</option>
+                                    <?php if (!empty($user['province'])): ?>
+                                        <option value="<?= htmlspecialchars($user['province']) ?>" selected>
+                                            <?= htmlspecialchars($user['province']) ?>
+                                        </option>
+                                    <?php endif; ?>
+                                </select>
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <label class="col-sm-3 col-form-label">เขต/อำเภอ</label>
                             <div class="col-sm-9">
-                                <input type="text" class="form-control" name="district" 
-                                       value="<?= htmlspecialchars($user['district'] ?? '') ?>">
+                                <select class="form-control" name="district" id="district">
+                                    <option value="">เลือกเขต/อำเภอ</option>
+                                    <?php if (!empty($user['district'])): ?>
+                                        <option value="<?= htmlspecialchars($user['district']) ?>" selected>
+                                            <?= htmlspecialchars($user['district']) ?>
+                                        </option>
+                                    <?php endif; ?>
+                                </select>
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <label class="col-sm-3 col-form-label">แขวง/ตำบล</label>
                             <div class="col-sm-9">
-                                <input type="text" class="form-control" name="subdistrict" 
-                                       value="<?= htmlspecialchars($user['subdistrict'] ?? '') ?>">
+                                <select class="form-control" name="subdistrict" id="subdistrict">
+                                    <option value="">เลือกแขวง/ตำบล</option>
+                                    <?php if (!empty($user['subdistrict'])): ?>
+                                        <option value="<?= htmlspecialchars($user['subdistrict']) ?>" selected>
+                                            <?= htmlspecialchars($user['subdistrict']) ?>
+                                        </option>
+                                    <?php endif; ?>
+                                </select>
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <label class="col-sm-3 col-form-label">รหัสไปรษณีย์</label>
                             <div class="col-sm-9">
-                                <input type="text" class="form-control" name="zipcode" 
-                                       value="<?= htmlspecialchars($user['zipcode'] ?? '') ?>">
+                                <input type="text" class="form-control" name="zipcode" id="zipcode" 
+                                       value="<?= htmlspecialchars($user['zipcode'] ?? '') ?>" readonly>
                             </div>
                         </div>
 
@@ -411,7 +456,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-save"></i> บันทึกการเปลี่ยนแปลง
                                 </button>
-                                <a href="sh_product.php" class="btn btn-secondary">
+                                <?php
+                                // กำหนดหน้าที่จะกลับไปตาม return_to parameter
+                                $return_to = $_GET['return_to'] ?? 'sh_product';
+                                $back_url = '';
+                                
+                                switch($return_to) {
+                                    case 'yaz':
+                                        $back_url = 'yaz.php';
+                                        break;
+                                    case 'order_history':
+                                        $back_url = 'order_history.php';
+                                        break;
+                                    case 'sh_product':
+                                    default:
+                                        $back_url = 'sh_product.php';
+                                        break;
+                                }
+                                ?>
+                                <a href="<?= $back_url ?>" class="btn btn-secondary">
                                     <i class="fas fa-arrow-left"></i> กลับ
                                 </a>
                             </div>
@@ -423,5 +486,148 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
 
     <script src="bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // ฟังก์ชันสำหรับโหลดข้อมูลจังหวัด
+    function loadProvinces() {
+        const provinceSelect = document.getElementById('province');
+        
+        fetch('thailand_address_data.php?action=get_provinces')
+            .then(response => response.json())
+            .then(data => {
+                // เพิ่มตัวเลือกแรก
+                provinceSelect.innerHTML = '<option value="">เลือกจังหวัด</option>';
+                
+                // เพิ่มจังหวัดทั้งหมด
+                data.forEach(province => {
+                    const option = document.createElement('option');
+                    option.value = province.name;
+                    option.textContent = province.name;
+                    provinceSelect.appendChild(option);
+                });
+                
+                // ถ้ามีจังหวัดที่เลือกไว้แล้ว ให้เลือกไว้
+                const currentProvince = '<?= htmlspecialchars($user['province'] ?? '') ?>';
+                if (currentProvince) {
+                    provinceSelect.value = currentProvince;
+                    // โหลดเขต/อำเภอของจังหวัดที่เลือกไว้
+                    loadDistricts();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading provinces:', error);
+            });
+    }
+    
+    // ฟังก์ชันสำหรับดึงข้อมูลเขต/อำเภอ
+    function loadDistricts() {
+        const province = document.getElementById('province').value;
+        const districtSelect = document.getElementById('district');
+        const subdistrictSelect = document.getElementById('subdistrict');
+        const zipcodeInput = document.getElementById('zipcode');
+        
+        // รีเซ็ต dropdown และ input
+        districtSelect.innerHTML = '<option value="">เลือกเขต/อำเภอ</option>';
+        subdistrictSelect.innerHTML = '<option value="">เลือกแขวง/ตำบล</option>';
+        zipcodeInput.value = '';
+        
+        if (province) {
+            fetch(`thailand_address_data.php?action=get_districts&province=${encodeURIComponent(province)}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(district => {
+                        const option = document.createElement('option');
+                        option.value = district.name;
+                        option.textContent = district.name;
+                        districtSelect.appendChild(option);
+                    });
+                    
+                    // ถ้ามีเขต/อำเภอที่เลือกไว้แล้ว ให้เลือกไว้
+                    const currentDistrict = '<?= htmlspecialchars($user['district'] ?? '') ?>';
+                    if (currentDistrict) {
+                        districtSelect.value = currentDistrict;
+                        // โหลดแขวง/ตำบลของเขต/อำเภอที่เลือกไว้
+                        loadSubdistricts();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading districts:', error);
+                });
+        }
+    }
+    
+    // ฟังก์ชันสำหรับดึงข้อมูลแขวง/ตำบล
+    function loadSubdistricts() {
+        const province = document.getElementById('province').value;
+        const district = document.getElementById('district').value;
+        const subdistrictSelect = document.getElementById('subdistrict');
+        const zipcodeInput = document.getElementById('zipcode');
+        
+        // รีเซ็ต dropdown และ input
+        subdistrictSelect.innerHTML = '<option value="">เลือกแขวง/ตำบล</option>';
+        zipcodeInput.value = '';
+        
+        if (province && district) {
+            fetch(`thailand_address_data.php?action=get_subdistricts&province=${encodeURIComponent(province)}&district=${encodeURIComponent(district)}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(subdistrict => {
+                        const option = document.createElement('option');
+                        option.value = subdistrict.name;
+                        option.textContent = subdistrict.name;
+                        subdistrictSelect.appendChild(option);
+                    });
+                    
+                    // ถ้ามีแขวง/ตำบลที่เลือกไว้แล้ว ให้เลือกไว้
+                    const currentSubdistrict = '<?= htmlspecialchars($user['subdistrict'] ?? '') ?>';
+                    if (currentSubdistrict) {
+                        subdistrictSelect.value = currentSubdistrict;
+                        // โหลดรหัสไปรษณีย์
+                        loadZipcode();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading subdistricts:', error);
+                });
+        }
+    }
+    
+    // ฟังก์ชันสำหรับดึงรหัสไปรษณีย์
+    function loadZipcode() {
+        const province = document.getElementById('province').value;
+        const district = document.getElementById('district').value;
+        const subdistrict = document.getElementById('subdistrict').value;
+        const zipcodeInput = document.getElementById('zipcode');
+        
+        if (province && district && subdistrict) {
+            fetch(`thailand_address_data.php?action=get_zipcode&province=${encodeURIComponent(province)}&district=${encodeURIComponent(district)}&subdistrict=${encodeURIComponent(subdistrict)}`)
+                .then(response => response.json())
+                .then(data => {
+                    zipcodeInput.value = data;
+                })
+                .catch(error => {
+                    console.error('Error loading zipcode:', error);
+                });
+        }
+    }
+    
+    // เพิ่ม event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        const provinceSelect = document.getElementById('province');
+        const districtSelect = document.getElementById('district');
+        const subdistrictSelect = document.getElementById('subdistrict');
+        
+        // โหลดข้อมูลจังหวัดเมื่อหน้าโหลดเสร็จ
+        loadProvinces();
+        
+        // เมื่อเลือกจังหวัด
+        provinceSelect.addEventListener('change', loadDistricts);
+        
+        // เมื่อเลือกเขต/อำเภอ
+        districtSelect.addEventListener('change', loadSubdistricts);
+        
+        // เมื่อเลือกแขวง/ตำบล
+        subdistrictSelect.addEventListener('change', loadZipcode);
+    });
+    </script>
 </body>
 </html>
