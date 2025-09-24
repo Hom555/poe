@@ -170,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     error_log("Checking file key: " . $file_key);
                     if (isset($_FILES[$file_key]) && $_FILES[$file_key]['error'] == 0) {
                         error_log("File found: " . $file_key . " - " . $_FILES[$file_key]['name']);
-                        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'jfif'];
                         $filename = $_FILES[$file_key]['name'];
                         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
                         

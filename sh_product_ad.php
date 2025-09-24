@@ -222,9 +222,25 @@ while($row = $result->fetch_assoc()) {
                                                     <div class="row">
                                                         <div class="col-4">
                                         <?php
-                                                            $image_src = strpos($product['image'], 'http') === 0 ? 
-                                                                $product['image'] : 
-                                                                'img/' . $product['image'];
+                                                            // หารูปภาพสีแรกที่พบ
+                                                            $color_image_sql = "SELECT image FROM product_sizes WHERE product_base_id = ? AND image IS NOT NULL AND image != '' LIMIT 1";
+                                                            $color_image_stmt = $conn->prepare($color_image_sql);
+                                                            $color_image_stmt->bind_param("i", $product['id']);
+                                                            $color_image_stmt->execute();
+                                                            $color_image_result = $color_image_stmt->get_result();
+                                                            $color_image_row = $color_image_result->fetch_assoc();
+                                                            
+                                                            if ($color_image_row && !empty($color_image_row['image'])) {
+                                                                // ใช้รูปภาพสี
+                                                                $image_src = strpos($color_image_row['image'], 'http') === 0 ? 
+                                                                    $color_image_row['image'] : 
+                                                                    'img/' . $color_image_row['image'];
+                                                            } else {
+                                                                // ใช้รูปภาพหลัก
+                                                                $image_src = strpos($product['image'], 'http') === 0 ? 
+                                                                    $product['image'] : 
+                                                                    'img/' . $product['image'];
+                                                            }
                                         ?>
                                         <img src="<?= htmlspecialchars($image_src) ?>" 
                                                                  alt="<?= htmlspecialchars($product['name']) ?>"

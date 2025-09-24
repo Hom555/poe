@@ -48,9 +48,9 @@ if (isset($_FILES['payment_slip']) && $_FILES['payment_slip']['error'] == 0) {
     }
     
     // ตรวจสอบประเภทไฟล์
-    $allowed_types = ['image/jpeg', 'image/png', 'image/webp'];
+    $allowed_types = ['image/jpeg', 'image/png', 'image/webp', 'image/jfif'];
     if (!in_array($file['type'], $allowed_types)) {
-        echo "<script>alert('รองรับเฉพาะไฟล์ .jpg, .png และ .webp เท่านั้น'); window.history.back();</script>";
+        echo "<script>alert('รองรับเฉพาะไฟล์ .jpg, .png, .webp และ .jfif เท่านั้น'); window.history.back();</script>";
         exit();
     }
 
@@ -69,6 +69,9 @@ if (isset($_FILES['payment_slip']) && $_FILES['payment_slip']['error'] == 0) {
             break;
         case 'image/webp':
             $file_extension = '.webp';
+            break;
+        case 'image/jfif':
+            $file_extension = '.jfif';
             break;
         default:
             $file_extension = '.jpg';

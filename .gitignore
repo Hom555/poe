@@ -48,6 +48,7 @@ img/*.jpeg
 img/*.png
 img/*.gif
 img/*.webp
+img/*.jfif
 uploads/
 assets/images/
 

@@ -46,9 +46,25 @@ function getColorImages($product_id, $conn) {
     return $colors;
 }
 
-// ฟังก์ชันสร้าง URL รูปภาพสี (ใช้รูปภาพหลักของสินค้าเป็น fallback)
-function getColorImageUrl($product_id, $color, $main_image) {
-    // ถ้ามีรูปภาพหลัก ให้ใช้รูปภาพหลัก
+// ฟังก์ชันสร้าง URL รูปภาพสี (ดึงจาก database)
+function getColorImageUrl($product_id, $color, $main_image, $conn) {
+    // ดึงรูปภาพสีจาก database
+    $sql = "SELECT image FROM product_sizes WHERE product_base_id = ? AND color = ? AND image IS NOT NULL AND image != '' LIMIT 1";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("is", $product_id, $color);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($row = $result->fetch_assoc()) {
+        $color_image = $row['image'];
+        if (strpos($color_image, 'http') === 0) {
+            return $color_image;
+        } else {
+            return 'img/' . $color_image;
+        }
+    }
+    
+    // ถ้าไม่มีรูปภาพสี ให้ใช้รูปภาพหลัก
     if (!empty($main_image)) {
         if (strpos($main_image, 'http') === 0) {
             return $main_image;
@@ -57,7 +73,7 @@ function getColorImageUrl($product_id, $color, $main_image) {
         }
     }
     
-    // ถ้าไม่มีรูปภาพหลัก ให้ใช้รูปภาพสี default
+    // ถ้าไม่มีรูปภาพใดเลย ให้ใช้รูปภาพ default
     return 'img/no-image.svg';
 }
 

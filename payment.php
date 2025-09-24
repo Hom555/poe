@@ -441,9 +441,9 @@ function getTextColor($colorName) {
                         <div class="mb-3">
                             <label class="form-label">แนบสลิปการโอนเงิน</label>
                             <input type="file" name="payment_slip" class="form-control" 
-                                   accept="image/jpeg,image/png,image/webp" required 
+                                   accept="image/jpeg,image/png,image/webp,image/jfif" required 
                                    onchange="validateFile(this)">
-                            <div class="form-text">รองรับไฟล์ภาพ jpg, jpeg, png, webp ขนาดไม่เกิน 2MB</div>
+                            <div class="form-text">รองรับไฟล์ภาพ jpg, jpeg, png, webp, jfif ขนาดไม่เกิน 2MB</div>
                             
                             <div id="slip-preview" class="mt-2 text-center" style="display: none;">
                                 <img id="preview-img" src="" alt="ตัวอย่างสลิป" class="img-fluid" style="max-height: 200px;">
@@ -539,14 +539,14 @@ function copyPromptPay() {
 function validateFile(input) {
     const file = input.files[0];
     const maxSize = 2 * 1024 * 1024; // 2MB
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jfif'];
     const preview = document.getElementById("slip-preview");
     const previewImg = document.getElementById("preview-img");
 
     if (file) {
         // ตรวจสอบประเภทไฟล์
         if (!allowedTypes.includes(file.type)) {
-            alert("อนุญาตเฉพาะไฟล์ JPG, PNG หรือ WEBP เท่านั้น");
+            alert("อนุญาตเฉพาะไฟล์ JPG, PNG, WEBP หรือ JFIF เท่านั้น");
             input.value = ""; // ล้างค่า input
             preview.style.display = "none";
             return;

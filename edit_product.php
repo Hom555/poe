@@ -240,7 +240,7 @@ $type_result = mysqli_query($conn, $type_sql);
                                                             <!-- แสดงข้อมูลเดิมสำหรับสีที่ถูกเลือกไว้แล้ว -->
                                                             <?php if ($is_selected && $size_data): ?>
                                                                 <?php foreach($size_data['colors'] as $color => $color_data): ?>
-                                                                    <div class="color-image-item mb-3" data-color="<?= $color ?>">
+                                                                    <div class="color-image-item mb-3" data-color="<?= $color ?>" style="display: block;" id="existing-color-<?= $size_lower ?>-<?= $color ?>">
                                                                         <?php if ($color === 'อื่นๆ'): ?>
                                                                             <!-- แสดง custom color input สำหรับสีอื่นๆ -->
                                                                             <div class="custom-color-input mb-3" style="display: block;">
@@ -308,7 +308,7 @@ $type_result = mysqli_query($conn, $type_sql);
                                                                                                accept="image/*"
                                                                                                onchange="previewColorImage(this, '<?= $size_lower ?>', '<?= $color ?>')">
                                                                                     </div>
-                                                                                    <small class="text-muted">อัพโหลดไฟล์รูปภาพ (JPG, PNG, WEBP)</small>
+                                                                                    <small class="text-muted">อัพโหลดไฟล์รูปภาพ (JPG, PNG, WEBP, JFIF)</small>
                                                                                     <div class="form-text text-muted">
                                                                                         <i class="fas fa-info-circle me-1"></i>
                                                                                         ข้อมูลเดิม: <?= !empty($color_data['image']) ? htmlspecialchars($color_data['image']) : 'ไม่มีรูปภาพ' ?>
@@ -682,34 +682,15 @@ body {
 .color-image-item {
     border: 2px solid #e9ecef;
     border-radius: 15px;
-    padding: 20px;
+    padding: 15px;
     background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.color-image-item::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #0d6efd, #17a2b8);
-    opacity: 0;
-    transition: opacity 0.3s ease;
 }
 
 .color-image-item:hover {
     border-color: #0d6efd;
-    box-shadow: 0 8px 25px rgba(13, 110, 253, 0.15);
-    transform: translateY(-2px);
-}
-
-.color-image-item:hover::before {
-    opacity: 1;
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.1);
 }
 
 .color-image-item .badge {
@@ -718,91 +699,35 @@ body {
     border-radius: 15px;
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    transition: all 0.3s ease;
-}
-
-.color-image-item .badge:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-
-.color-image-item .input-group {
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-}
-
-.color-image-item .input-group:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.color-image-item .input-group-sm .form-control {
-    padding: 0.5rem 0.7rem;
-    font-size: 0.85rem;
-    border: none;
-    background: rgba(255, 255, 255, 0.9);
-    transition: all 0.3s ease;
-}
-
-.color-image-item .input-group-sm .form-control:focus {
-    box-shadow: none;
-    background: rgba(255, 255, 255, 1);
-    border-color: #0d6efd;
-}
-
-.color-image-item .input-group-sm .input-group-text {
-    padding: 0.5rem 0.7rem;
-    font-size: 0.85rem;
-    border: none;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.color-image-item .input-group-sm .input-group-text.bg-primary {
-    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
-}
-
-.color-image-item .input-group-sm .input-group-text.bg-info {
-    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
 }
 
 .color-image-preview {
     text-align: center;
-    margin-top: 15px;
-    padding: 15px;
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-    border-radius: 12px;
-    border: 2px dashed #e9ecef;
-    transition: all 0.3s ease;
-}
-
-.color-image-preview:hover {
-    border-color: #0d6efd;
-    background: linear-gradient(135deg, #f0f8ff 0%, #ffffff 100%);
+    margin-top: 10px;
 }
 
 .color-image-preview img {
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     transition: all 0.3s ease;
-    border: 2px solid #fff;
 }
 
 .color-image-preview img:hover {
     transform: scale(1.05);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-    border-color: #0d6efd;
-}
-
-.color-image-preview .text-success {
-    font-weight: 600;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
 }
 
 .form-control-sm {
     font-size: 0.8rem;
-    padding: 0.4rem 0.6rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-control-sm:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
 }
 
 .color-images {
@@ -819,34 +744,6 @@ body {
 .color-images:hover {
     border-color: #0d6efd;
     box-shadow: 0 4px 15px rgba(13, 110, 253, 0.1);
-}
-
-.color-preview-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.color-preview {
-    width: 60px;
-    height: 30px;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.color-text {
-    font-size: 12px;
-    font-weight: 500;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-}
-
-.color-preview:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 .color-selection {
@@ -1094,27 +991,6 @@ body {
     }
 }
 
-/* ซ่อน input ที่ไม่ได้เลือก */
-.size-inputs[style*="display: none"] input[type="url"],
-.size-inputs[style*="display: none"] input[type="file"] {
-    display: none !important;
-}
-
-/* ลบ required attribute จาก input ที่ซ่อน */
-input[type="url"]:not([style*="display: block"]),
-input[type="file"]:not([style*="display: block"]) {
-    required: false !important;
-}
-
-/* ซ่อน input ที่ไม่ได้ใช้จริงๆ */
-input[type="url"]:not([style*="display: block"]),
-input[type="file"]:not([style*="display: block"]) {
-    display: none !important;
-    position: absolute !important;
-    left: -9999px !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-}
 
 /* CSS สำหรับช่องใส่ชื่อสีอื่น */
 .custom-color-input {
@@ -1344,10 +1220,14 @@ function addColorImageUpload(size, color) {
     
     // ตรวจสอบว่ามีรูปภาพสำหรับสีนี้อยู่แล้วหรือไม่
     const existingImage = colorImagesContainer.querySelector(`[data-color="${color}"]`);
+    
     if (existingImage) {
-        return; // มีอยู่แล้ว ไม่ต้องเพิ่ม
+        // ถ้ามีอยู่แล้ว ให้แสดงส่วนนั้น
+        existingImage.style.display = 'block';
+        return;
     }
     
+    // ถ้าไม่มีส่วนสำหรับสีนี้ ให้สร้างใหม่
     // ตรวจสอบว่ามีการใส่ชื่อสีอื่นหรือไม่
     let displayColor = color;
     if (color === 'อื่นๆ') {
@@ -1364,6 +1244,7 @@ function addColorImageUpload(size, color) {
     const colorImageDiv = document.createElement('div');
     colorImageDiv.className = 'color-image-item mb-3';
     colorImageDiv.setAttribute('data-color', color);
+    
     colorImageDiv.innerHTML = `
         <div class="d-flex align-items-center mb-3">
             <span class="badge me-2" style="background-color: ${getColorCode(color)}; color: ${getTextColor(color)}; font-size: 0.8rem; padding: 6px 12px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
@@ -1408,7 +1289,7 @@ function addColorImageUpload(size, color) {
                                accept="image/*"
                                onchange="previewColorImage(this, '${sizeLower}', '${color}')">
                     </div>
-                    <small class="text-muted">อัพโหลดไฟล์รูปภาพ (JPG, PNG, WEBP)</small>
+                    <small class="text-muted">อัพโหลดไฟล์รูปภาพ (JPG, PNG, WEBP, JFIF)</small>
                 </div>
                 <div class="col-6">
                     <div class="input-group input-group-sm">
@@ -1464,7 +1345,30 @@ function removeColorImageUpload(size, color) {
     const colorImageDiv = colorImagesContainer.querySelector(`[data-color="${color}"]`);
     
     if (colorImageDiv) {
-        colorImageDiv.remove();
+        // ในหน้า edit ให้ซ่อนแทนการลบ เพื่อไม่ให้ข้อมูลเดิมหายไป
+        colorImageDiv.style.display = 'none';
+        
+        // ล้างค่าที่กรอกใหม่
+        const fileInput = colorImageDiv.querySelector('input[type="file"]');
+        if (fileInput) {
+            fileInput.value = '';
+        }
+        
+        const urlInput = colorImageDiv.querySelector('input[type="url"]');
+        if (urlInput) {
+            urlInput.value = '';
+        }
+        
+        const numberInput = colorImageDiv.querySelector('input[type="number"]');
+        if (numberInput) {
+            numberInput.value = '';
+        }
+        
+        // ซ่อน preview
+        const preview = document.getElementById(`preview-${sizeLower}-${color}`);
+        if (preview) {
+            preview.style.display = 'none';
+        }
     }
 }
 
@@ -1579,6 +1483,57 @@ function initializeFormValidation() {
 // เรียกใช้เมื่อโหลดหน้าเสร็จ
 document.addEventListener('DOMContentLoaded', function() {
     initializeFormValidation();
+    
+    // เรียกใช้ updateColorPreview สำหรับสีที่ถูกเลือกไว้แล้ว
+    const checkedColorInputs = document.querySelectorAll('input[name*="colors_"][name*="[]"]:checked');
+    checkedColorInputs.forEach(checkbox => {
+        const name = checkbox.name;
+        const sizeMatch = name.match(/colors_(\w+)\[/);
+        const color = checkbox.value;
+        
+        if (sizeMatch) {
+            const size = sizeMatch[1];
+            updateColorPreview(size, color);
+        }
+    });
+    
+    // แสดงปุ่มเลือกไฟล์สำหรับสีที่ถูกเลือกไว้แล้ว
+    setTimeout(() => {
+        const colorImageItems = document.querySelectorAll('.color-image-item');
+        
+        colorImageItems.forEach((item) => {
+            item.style.display = 'block';
+            
+            const fileInputs = item.querySelectorAll('input[type="file"]');
+            const urlInputs = item.querySelectorAll('input[type="url"]');
+            const numberInputs = item.querySelectorAll('input[type="number"]');
+            
+            fileInputs.forEach((input) => {
+                input.style.display = 'block';
+                input.style.visibility = 'visible';
+                input.style.opacity = '1';
+                input.style.position = 'static';
+                input.style.left = 'auto';
+                input.style.top = 'auto';
+            });
+            urlInputs.forEach((input) => {
+                input.style.display = 'block';
+                input.style.visibility = 'visible';
+                input.style.opacity = '1';
+                input.style.position = 'static';
+                input.style.left = 'auto';
+                input.style.top = 'auto';
+            });
+            numberInputs.forEach((input) => {
+                input.style.display = 'block';
+                input.style.visibility = 'visible';
+                input.style.opacity = '1';
+                input.style.position = 'static';
+                input.style.left = 'auto';
+                input.style.top = 'auto';
+            });
+        });
+    }, 100);
     
     // เพิ่ม event listener สำหรับ form submit
     const form = document.getElementById('editProductForm');

@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 // ตรวจสอบไฟล์รูปภาพ
                 $file_key = "color_images_{$size_lower}_{$color}";
                 if (isset($_FILES[$file_key]) && $_FILES[$file_key]['error'] == 0 && !$first_image_found) {
-                    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'jfif'];
                     $filename = $_FILES[$file_key]['name'];
                     $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
                     
@@ -153,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     // ตรวจสอบไฟล์รูปภาพ
                     $file_key = "color_images_{$size_lower}_{$color}";
                     if (isset($_FILES[$file_key]) && $_FILES[$file_key]['error'] == 0) {
-                        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'jfif'];
                         $filename = $_FILES[$file_key]['name'];
                         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
                         
